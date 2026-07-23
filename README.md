@@ -19,6 +19,7 @@ Recréée fidèlement à partir du handoff de design `ScoreParty.dc.html` (voir 
 npm install
 npm start        # puis scanner le QR code avec Expo Go, ou
 npm run android  # / npm run ios
+npm run web      # ouvre l'app dans le navigateur (aucun appareil requis)
 ```
 
 ## Architecture
