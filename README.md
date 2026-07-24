@@ -22,6 +22,17 @@ npm run android  # / npm run ios
 npm run web      # ouvre l'app dans le navigateur (aucun appareil requis)
 ```
 
+## Déploiement en production (web)
+
+Le projet est configuré pour un déploiement statique zero-config sur [Vercel](https://vercel.com) (`vercel.json` à la racine) :
+
+1. Sur https://vercel.com, se connecter avec le compte GitHub.
+2. **Add New… → Project**, importer le repo `scoreparty-app`.
+3. Vercel détecte `vercel.json` (build `npm run build:web`, sortie `dist/`) — laisser tel quel et déployer.
+4. Chaque `git push` sur `main` redéploie automatiquement l'URL de prod.
+
+`npm run build:web` (= `expo export --platform web`) produit un export statique dans `dist/` déployable sur n'importe quel hébergeur statique (Netlify, Cloudflare Pages, GitHub Pages avec un sous-chemin adapté, etc.).
+
 ## Architecture
 
 ```
