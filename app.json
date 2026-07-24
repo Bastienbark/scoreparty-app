@@ -20,7 +20,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "lang": "fr",
+      "themeColor": "#0A1420",
+      "description": "Suivi de parties de jeux de société : Les Cinq Rois, Trou du Cul."
     },
     "plugins": [
       [

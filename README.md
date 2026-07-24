@@ -33,6 +33,15 @@ Le projet est configuré pour un déploiement statique zero-config sur [Vercel](
 
 `npm run build:web` (= `expo export --platform web`) produit un export statique dans `dist/` déployable sur n'importe quel hébergeur statique (Netlify, Cloudflare Pages, GitHub Pages avec un sous-chemin adapté, etc.).
 
+### PWA — installer l'app depuis le navigateur
+
+Le site est une PWA installable (`public/manifest.json`, icônes, `public/index.html`) :
+
+- **Android/Chrome/Edge** : menu ⋮ → *Installer l'application* (ou bannière automatique) → icône sur l'écran d'accueil, ouverture en plein écran sans barre de navigateur.
+- **iOS/Safari** : bouton Partager → *Sur l'écran d'accueil*.
+
+Ce n'est pas un vrai binaire natif publié sur l'App Store / Google Play (pour ça il faudrait un build EAS + compte développeur), mais l'expérience d'usage quotidien (icône, plein écran, hors-ligne grâce au stockage local) est équivalente à une app installée.
+
 ## Architecture
 
 ```
