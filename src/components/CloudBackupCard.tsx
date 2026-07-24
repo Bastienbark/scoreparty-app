@@ -1,8 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAppStore } from '../state/store';
 import { colors, fonts, radii } from '../theme/tokens';
+import { confirmAction, notify } from '../utils/confirm';
 import { PressableScale } from './PressableScale';
 
 function statusLabel(status: string, lastSyncedAt: string | null, error: string | null): string {
@@ -38,50 +39,36 @@ export function CloudBackupCard() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const confirmRestore = () => {
+  const confirmRestore = async () => {
     const code = inputCode.trim();
     if (!code) return;
-    Alert.alert(
-      'Restaurer cette sauvegarde ?',
-      `Les joueurs et l'historique de cet appareil seront remplacés par la sauvegarde du code ${code.toUpperCase()}. Cette action est irréversible.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Restaurer',
-          style: 'destructive',
-          onPress: async () => {
-            const res = await restoreFromSyncCode(code);
-            if (res.ok) {
-              setRestoreOpen(false);
-              setInputCode('');
-              Alert.alert('Restauré ✅', 'Tes joueurs et ton historique ont été remplacés par la sauvegarde.');
-            } else {
-              Alert.alert('Échec', res.error ?? 'Code introuvable.');
-            }
-          },
-        },
-      ],
-    );
+    const ok = await confirmAction({
+      title: 'Restaurer cette sauvegarde ?',
+      message: `Les joueurs et l'historique de cet appareil seront remplacés par la sauvegarde du code ${code.toUpperCase()}. Cette action est irréversible.`,
+      confirmLabel: 'Restaurer',
+    });
+    if (!ok) return;
+    const res = await restoreFromSyncCode(code);
+    if (res.ok) {
+      setRestoreOpen(false);
+      setInputCode('');
+      notify('Restauré ✅', "Tes joueurs et ton historique ont été remplacés par la sauvegarde.");
+    } else {
+      notify('Échec', res.error ?? 'Code introuvable.');
+    }
   };
 
-  const confirmReset = () => {
-    Alert.alert(
-      'Réinitialiser toutes les données ?',
-      "Tous les joueurs et toutes les parties seront supprimés définitivement, sur cet appareil et dans la sauvegarde cloud. Cette action est irréversible.",
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Tout supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            setResetting(true);
-            await resetAllData();
-            setResetting(false);
-            Alert.alert('Réinitialisé ✅', 'Toutes les données ont été supprimées. Tu repars de zéro.');
-          },
-        },
-      ],
-    );
+  const confirmReset = async () => {
+    const ok = await confirmAction({
+      title: 'Réinitialiser toutes les données ?',
+      message: "Tous les joueurs et toutes les parties seront supprimés définitivement, sur cet appareil et dans la sauvegarde cloud. Cette action est irréversible.",
+      confirmLabel: 'Tout supprimer',
+    });
+    if (!ok) return;
+    setResetting(true);
+    await resetAllData();
+    setResetting(false);
+    notify('Réinitialisé ✅', 'Toutes les données ont été supprimées. Tu repars de zéro.');
   };
 
   return (

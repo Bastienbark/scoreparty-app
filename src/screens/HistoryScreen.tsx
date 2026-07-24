@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Chip } from '../components/Chip';
 import { IconBadge } from '../components/IconBadge';
 import { PressableScale } from '../components/PressableScale';
@@ -8,6 +8,7 @@ import { GAMES, getGame } from '../games/registry';
 import { useAppStore } from '../state/store';
 import { Player } from '../types/models';
 import { colors, fonts, radii } from '../theme/tokens';
+import { confirmAction } from '../utils/confirm';
 import { fmtDate } from '../utils/date';
 
 export function HistoryScreen() {
@@ -23,15 +24,13 @@ export function HistoryScreen() {
   const deleteHistoryEntry = useAppStore((s) => s.deleteHistoryEntry);
   const playerById = useAppStore((s) => s.playerById);
 
-  const confirmDelete = (id: string, gameName: string, dateLabel: string) => {
-    Alert.alert(
-      'Supprimer cette partie ?',
-      `La partie de ${gameName} du ${dateLabel} sera supprimée définitivement, y compris de la sauvegarde cloud si elle est active.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => deleteHistoryEntry(id) },
-      ],
-    );
+  const confirmDelete = async (id: string, gameName: string, dateLabel: string) => {
+    const ok = await confirmAction({
+      title: 'Supprimer cette partie ?',
+      message: `La partie de ${gameName} du ${dateLabel} sera supprimée définitivement, y compris de la sauvegarde cloud si elle est active.`,
+      confirmLabel: 'Supprimer',
+    });
+    if (ok) deleteHistoryEntry(id);
   };
 
   const playersMap = useMemo(() => {
