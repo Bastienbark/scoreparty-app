@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { CloudBackupCard } from '../components/CloudBackupCard';
 import { IconBadge } from '../components/IconBadge';
 import { PressableScale } from '../components/PressableScale';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -58,6 +59,8 @@ export function HomeScreen() {
           <Text style={styles.shortcutSub}>Progression &amp; classements</Text>
         </PressableScale>
       </View>
+
+      <CloudBackupCard />
 
       <Text style={styles.sectionTitle}>Dernières parties</Text>
       {recent.length === 0 ? (

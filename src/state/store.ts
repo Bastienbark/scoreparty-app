@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
 import { getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
@@ -16,6 +17,9 @@ import { seedHistory, seedPlayers } from './seed';
 
 const PLAYERS_KEY = 'scoreparty_players';
 const HISTORY_KEY = 'scoreparty_history';
+const SYNC_CODE_KEY = 'scoreparty_sync_code';
+
+export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'synced' | 'error';
 
 async function loadJSON<T>(key: string): Promise<T | null> {
   try {
@@ -33,6 +37,24 @@ async function saveJSON(key: string, val: unknown): Promise<void> {
     // ignore persistence failures — live state remains usable this session
   }
 }
+
+async function loadString(key: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+async function saveString(key: string, val: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, val);
+  } catch {
+    // ignore persistence failures
+  }
+}
+
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface HistoryFilters {
   gameIds: string[];
@@ -62,8 +84,16 @@ interface AppState {
   rulesQuery: string;
   rulesOpenTheme: string | null;
 
+  syncCode: string | null;
+  syncStatus: SyncStatus;
+  lastSyncedAt: string | null;
+  syncError: string | null;
+
   hydrate: () => Promise<void>;
   playerById: (id: string) => Player;
+
+  syncNow: () => Promise<void>;
+  restoreFromSyncCode: (code: string) => Promise<{ ok: boolean; error?: string }>;
 
   openNewGameSetup: () => void;
   selectSetupGame: (gameId: string) => void;
@@ -105,7 +135,16 @@ interface AppState {
 
 const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '' };
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set, get) => {
+  const schedulePush = () => {
+    if (!firebaseConfigured) return;
+    if (pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      get().syncNow();
+    }, 1500);
+  };
+
+  return {
   hydrated: false,
   players: [],
   history: [],
@@ -125,6 +164,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   rulesQuery: '',
   rulesOpenTheme: null,
 
+  syncCode: null,
+  syncStatus: firebaseConfigured ? 'idle' : 'disabled',
+  lastSyncedAt: null,
+  syncError: null,
+
   hydrate: async () => {
     let players = await loadJSON<Player[]>(PLAYERS_KEY);
     let history = await loadJSON<HistoryEntry[]>(HISTORY_KEY);
@@ -136,10 +180,59 @@ export const useAppStore = create<AppState>((set, get) => ({
       history = seedHistory(players);
       await saveJSON(HISTORY_KEY, history);
     }
-    set({ players, history, statsPlayerId: players[0]?.id ?? null, hydrated: true });
+
+    let syncCode = await loadString(SYNC_CODE_KEY);
+    if (!syncCode) {
+      syncCode = generateSyncCode();
+      await saveString(SYNC_CODE_KEY, syncCode);
+    }
+
+    set({ players, history, statsPlayerId: players[0]?.id ?? null, hydrated: true, syncCode });
   },
 
   playerById: (id) => get().players.find((p) => p.id === id) ?? { id, name: '?', color: '#888' },
+
+  syncNow: async () => {
+    const { syncCode, players, history } = get();
+    if (!firebaseConfigured || !syncCode) return;
+    set({ syncStatus: 'syncing', syncError: null });
+    try {
+      await pushSnapshot(syncCode, players, history);
+      set({ syncStatus: 'synced', lastSyncedAt: new Date().toISOString() });
+    } catch (e) {
+      set({ syncStatus: 'error', syncError: e instanceof Error ? e.message : 'Échec de la sauvegarde' });
+    }
+  },
+
+  restoreFromSyncCode: async (rawCode) => {
+    const code = normalizeSyncCode(rawCode);
+    if (!firebaseConfigured) return { ok: false, error: "Sauvegarde cloud non configurée." };
+    if (!code) return { ok: false, error: 'Code invalide.' };
+    set({ syncStatus: 'syncing', syncError: null });
+    try {
+      const snapshot = await fetchSnapshot(code);
+      if (!snapshot) {
+        set({ syncStatus: 'error', syncError: 'Aucune sauvegarde trouvée pour ce code.' });
+        return { ok: false, error: 'Aucune sauvegarde trouvée pour ce code.' };
+      }
+      await saveJSON(PLAYERS_KEY, snapshot.players);
+      await saveJSON(HISTORY_KEY, snapshot.history);
+      await saveString(SYNC_CODE_KEY, code);
+      set({
+        players: snapshot.players,
+        history: snapshot.history,
+        statsPlayerId: snapshot.players[0]?.id ?? null,
+        syncCode: code,
+        syncStatus: 'synced',
+        lastSyncedAt: snapshot.updatedAt,
+      });
+      return { ok: true };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : 'Échec de la restauration';
+      set({ syncStatus: 'error', syncError: error });
+      return { ok: false, error };
+    }
+  },
 
   openNewGameSetup: () => set({ setup: { ...emptySetup } }),
 
@@ -177,6 +270,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       };
     });
+    schedulePush();
   },
 
   toggleSetupVariant: (key) =>
@@ -256,6 +350,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       saveJSON(HISTORY_KEY, history);
       return { history, recapSaved: true };
     });
+    schedulePush();
   },
 
   resetLiveGame: () => set({ liveGame: null, recapSaved: false, modal: null }),
@@ -290,4 +385,5 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectRulesGame: (id) => set({ rulesGame: id, rulesQuery: '', rulesOpenTheme: null }),
   setRulesQuery: (v) => set({ rulesQuery: v }),
   toggleRulesTheme: (id) => set((s) => ({ rulesOpenTheme: s.rulesOpenTheme === id ? null : id })),
-}));
+  };
+});

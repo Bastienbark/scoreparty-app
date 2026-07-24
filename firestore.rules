@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// ScoreParty n'a pas d'écran de connexion : la sauvegarde cloud repose sur un
+// code aléatoire à haute entropie (ex: "XKPQR-7H4MN") généré sur l'appareil et
+// utilisé comme identifiant du document. Quiconque connaît le code peut lire
+// et écrire ses données — c'est un choix assumé pour rester sans compte
+// utilisateur, adapté à des données peu sensibles (joueurs, scores de jeux de
+// société). La seule protection ici est de refuser les codes trop courts pour
+// limiter les tentatives de brute-force / scan.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /syncs/{code} {
+      allow read, write: if code.size() >= 9;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
