@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
+import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
 import { getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
@@ -94,6 +94,7 @@ interface AppState {
 
   syncNow: () => Promise<void>;
   restoreFromSyncCode: (code: string) => Promise<{ ok: boolean; error?: string }>;
+  resetAllData: () => Promise<void>;
 
   openNewGameSetup: () => void;
   selectSetupGame: (gameId: string) => void;
@@ -116,6 +117,7 @@ interface AppState {
 
   saveGame: () => void;
   resetLiveGame: () => void;
+  deleteHistoryEntry: (id: string) => void;
 
   toggleHistGame: (id: string) => void;
   clearHistGameFilter: () => void;
@@ -232,6 +234,35 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ syncStatus: 'error', syncError: error });
       return { ok: false, error };
     }
+  },
+
+  resetAllData: async () => {
+    if (pushTimer) {
+      clearTimeout(pushTimer);
+      pushTimer = null;
+    }
+    const currentCode = get().syncCode;
+    if (firebaseConfigured && currentCode) {
+      try {
+        await deleteSnapshot(currentCode);
+      } catch {
+        // best-effort — the local reset still proceeds even if the cloud delete fails
+      }
+    }
+    const newCode = generateSyncCode();
+    await saveJSON(PLAYERS_KEY, []);
+    await saveJSON(HISTORY_KEY, []);
+    await saveString(SYNC_CODE_KEY, newCode);
+    set({
+      players: [],
+      history: [],
+      statsPlayerId: null,
+      statsCompareIds: [],
+      syncCode: newCode,
+      syncStatus: firebaseConfigured ? 'idle' : 'disabled',
+      lastSyncedAt: null,
+      syncError: null,
+    });
   },
 
   openNewGameSetup: () => set({ setup: { ...emptySetup } }),
@@ -354,6 +385,15 @@ export const useAppStore = create<AppState>((set, get) => {
   },
 
   resetLiveGame: () => set({ liveGame: null, recapSaved: false, modal: null }),
+
+  deleteHistoryEntry: (id) => {
+    set((s) => {
+      const history = s.history.filter((h) => h.id !== id);
+      saveJSON(HISTORY_KEY, history);
+      return { history };
+    });
+    schedulePush();
+  },
 
   toggleHistGame: (id) =>
     set((s) => {

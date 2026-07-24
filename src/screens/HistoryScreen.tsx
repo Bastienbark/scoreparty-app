@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Chip } from '../components/Chip';
 import { IconBadge } from '../components/IconBadge';
 import { PressableScale } from '../components/PressableScale';
@@ -20,7 +20,19 @@ export function HistoryScreen() {
   const setHistDateFrom = useAppStore((s) => s.setHistDateFrom);
   const setHistDateTo = useAppStore((s) => s.setHistDateTo);
   const toggleHistExpand = useAppStore((s) => s.toggleHistExpand);
+  const deleteHistoryEntry = useAppStore((s) => s.deleteHistoryEntry);
   const playerById = useAppStore((s) => s.playerById);
+
+  const confirmDelete = (id: string, gameName: string, dateLabel: string) => {
+    Alert.alert(
+      'Supprimer cette partie ?',
+      `La partie de ${gameName} du ${dateLabel} sera supprimée définitivement, y compris de la sauvegarde cloud si elle est active.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: () => deleteHistoryEntry(id) },
+      ],
+    );
+  };
 
   const playersMap = useMemo(() => {
     const m: Record<string, Player> = {};
@@ -111,6 +123,13 @@ export function HistoryScreen() {
                         {line}
                       </Text>
                     ))}
+                    <PressableScale
+                      scaleTo={0.97}
+                      onPress={() => confirmDelete(entry.id, game.name, fmtDate(entry.date))}
+                      style={styles.deleteBtn}
+                    >
+                      <Text style={styles.deleteBtnLabel}>🗑️ Supprimer cette partie</Text>
+                    </PressableScale>
                   </View>
                 )}
               </PressableScale>
@@ -144,4 +163,6 @@ const styles = StyleSheet.create({
   entryWinner: { fontSize: 12, color: colors.amber, fontWeight: '600', fontFamily: fonts.bodySemiBold },
   detail: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', gap: 4 },
   detailLine: { fontSize: 12, color: colors.textBody, fontFamily: fonts.body },
+  deleteBtn: { marginTop: 10, borderRadius: radii.sm, paddingVertical: 9, alignItems: 'center', backgroundColor: 'rgba(255,56,100,0.12)' },
+  deleteBtnLabel: { fontSize: 12, fontWeight: '600', color: colors.red, fontFamily: fonts.bodySemiBold },
 });

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, firebaseConfigured } from '../lib/firebase';
 import type { HistoryEntry, Player } from '../types/models';
 
@@ -33,6 +33,11 @@ export async function fetchSnapshot(code: string): Promise<CloudSnapshot | null>
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
   return snap.data() as CloudSnapshot;
+}
+
+export async function deleteSnapshot(code: string): Promise<void> {
+  if (!db) return;
+  await deleteDoc(doc(db, 'syncs', code));
 }
 
 export { firebaseConfigured };
