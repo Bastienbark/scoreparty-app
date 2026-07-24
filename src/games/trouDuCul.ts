@@ -21,6 +21,35 @@ export function roleForPosition(index: number, total: number): string {
   return 'Neutre';
 }
 
+/** The four "named" roles shown in per-player stats (Neutre is excluded — it only exists at 5+ players and isn't a distinct achievement). */
+export const ROLE_STATS_ORDER = ['Président', 'Vice-Président', 'Vice-Trou du Cul', 'Trou du Cul'];
+
+export interface RoleBreakdown {
+  counts: Record<string, number>;
+  totalRounds: number;
+}
+
+/** Counts, for a given player, how many rounds (across all their Trou du Cul games) ended with each role. */
+export function playerRoleCounts(entries: TrouDuCulHistoryEntry[], playerId: string): RoleBreakdown {
+  const counts: Record<string, number> = {};
+  let totalRounds = 0;
+  entries.forEach((entry) => {
+    entry.rounds.forEach((round) => {
+      const idx = round.order.indexOf(playerId);
+      if (idx === -1) return;
+      totalRounds++;
+      const role = round.roles[idx];
+      counts[role] = (counts[role] ?? 0) + 1;
+    });
+  });
+  return { counts, totalRounds };
+}
+
+export function rolePercent(breakdown: RoleBreakdown, role: string): number {
+  if (!breakdown.totalRounds) return 0;
+  return Math.round(((breakdown.counts[role] ?? 0) / breakdown.totalRounds) * 100);
+}
+
 export function roleStyle(role: string): { bg: string; fg: string } {
   switch (role) {
     case 'Président':
