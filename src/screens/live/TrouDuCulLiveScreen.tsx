@@ -51,7 +51,7 @@ export function TrouDuCulLiveScreen() {
       <View style={styles.header}>
         <BackButton size={32} onPress={() => navigation.goBack()} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Trou du Cul</Text>
+          <Text style={styles.title}>{game.name}</Text>
           <Text style={styles.subtitle}>Manche {roundNum}/5</Text>
         </View>
         <PressableScale onPress={finishNow} style={styles.finishBtn}>

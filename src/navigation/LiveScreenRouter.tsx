@@ -1,15 +1,17 @@
 import React from 'react';
 import { useAppStore } from '../state/store';
 import { CinqRoisLiveScreen } from '../screens/live/CinqRoisLiveScreen';
+import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
 import { TrouDuCulLiveScreen } from '../screens/live/TrouDuCulLiveScreen';
 
 /**
  * Dispatches to the right live-scoring screen based on the in-progress
- * game's id. Adding a 3rd game means adding one entry here.
+ * game's id. Adding a new game means adding one entry here.
  */
 const LIVE_SCREENS: Record<string, React.ComponentType> = {
   'cinq-rois': CinqRoisLiveScreen,
   'trou-du-cul': TrouDuCulLiveScreen,
+  skyjo: SkyjoLiveScreen,
 };
 
 export function LiveScreenRouter() {

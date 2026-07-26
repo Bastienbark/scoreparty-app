@@ -88,8 +88,8 @@ export function activeVariantLabels(variants: TrouDuCulVariants): string[] {
 
 export const trouDuCulGame: GameDef<TrouDuCulLiveGame, TrouDuCulHistoryEntry> = {
   id: 'trou-du-cul',
-  name: 'Trou du Cul',
-  badge: 'TDC',
+  name: 'Président',
+  badge: 'PRÉ',
   color: '#00E0B8',
   tagline: '5 manches · rôles & classement',
   totalRounds: TDC_TOTAL_ROUNDS,
@@ -102,7 +102,7 @@ export const trouDuCulGame: GameDef<TrouDuCulLiveGame, TrouDuCulHistoryEntry> = 
       items: [
         { q: 'Quels sont les rôles possibles ?', a: "Président, Vice-Président, Neutre(s) (à partir de 5 joueurs), Vice-Trou du Cul et Trou du Cul, attribués selon l'ordre dans lequel les joueurs se débarrassent de leurs cartes." },
         { q: 'Comment est attribué un rôle ?', a: 'Le premier joueur à finir devient Président, le dernier devient Trou du Cul ; les positions intermédiaires reçoivent Vice-Président, Neutre(s) ou Vice-Trou du Cul selon le nombre de joueurs.' },
-        { q: 'Combien de manches dans une partie ?', a: 'Une partie de Trou du Cul se joue en 5 manches fixes, avec un classement cumulé à la fin.' },
+        { q: 'Combien de manches dans une partie ?', a: 'Une partie de Président se joue en 5 manches fixes, avec un classement cumulé à la fin.' },
       ],
     },
     {

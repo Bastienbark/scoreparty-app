@@ -108,9 +108,11 @@ interface AppState {
   openCell: (round: number, pid: string) => void;
   modalDigit: (d: string) => void;
   modalBackspace: () => void;
+  modalToggleSign: () => void;
   modalCancel: () => void;
   modalConfirm: () => void;
   crNextRound: () => void;
+  skyjoNextRound: () => void;
 
   tdcTapPlayer: (pid: string) => void;
   tdcResetRound: () => void;
@@ -321,25 +323,33 @@ export const useAppStore = create<AppState>((set, get) => {
 
   openCell: (round, pid) => {
     const live = get().liveGame;
-    if (!live || live.gameId !== 'cinq-rois') return;
+    if (!live || (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo')) return;
     const existing = live.rounds[round - 1].scores[pid];
     set({ modal: { round, pid, value: existing !== undefined ? String(existing) : '' } });
   },
 
   modalDigit: (d) =>
-    set((s) => (s.modal ? { modal: { ...s.modal, value: (s.modal.value + d).slice(0, 3) } } : {})),
+    set((s) => (s.modal ? { modal: { ...s.modal, value: (s.modal.value + d).slice(0, 4) } } : {})),
 
   modalBackspace: () => set((s) => (s.modal ? { modal: { ...s.modal, value: s.modal.value.slice(0, -1) } } : {})),
+
+  modalToggleSign: () =>
+    set((s) => {
+      if (!s.modal) return {};
+      const v = s.modal.value;
+      const toggled = v.startsWith('-') ? v.slice(1) : v ? `-${v}` : '-';
+      return { modal: { ...s.modal, value: toggled } };
+    }),
 
   modalCancel: () => set({ modal: null }),
 
   modalConfirm: () => {
     const modal = get().modal;
     const live = get().liveGame;
-    if (!modal || !live || live.gameId !== 'cinq-rois') return;
+    if (!modal || !live || (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo')) return;
     const { round, pid, value } = modal;
     const rounds = live.rounds.map((r) => (r.round === round ? { ...r, scores: { ...r.scores, [pid]: Number(value || 0) } } : r));
-    set({ liveGame: { ...live, rounds }, modal: null });
+    set({ liveGame: { ...live, rounds } as LiveGame, modal: null });
   },
 
   crNextRound: () =>
@@ -347,6 +357,15 @@ export const useAppStore = create<AppState>((set, get) => {
       const live = s.liveGame;
       if (!live || live.gameId !== 'cinq-rois' || live.currentRound >= live.rounds.length) return {};
       return { liveGame: { ...live, currentRound: live.currentRound + 1 } };
+    }),
+
+  skyjoNextRound: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'skyjo') return {};
+      const nextRoundNum = live.currentRound + 1;
+      const rounds = [...live.rounds, { round: nextRoundNum, scores: {} }];
+      return { liveGame: { ...live, rounds, currentRound: nextRoundNum } };
     }),
 
   tdcTapPlayer: (pid) =>

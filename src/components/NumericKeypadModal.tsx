@@ -14,9 +14,11 @@ interface Props {
   onBackspace: () => void;
   onCancel: () => void;
   onConfirm: () => void;
+  allowNegative?: boolean;
+  onToggleSign?: () => void;
 }
 
-export function NumericKeypadModal({ visible, title, value, onDigit, onBackspace, onCancel, onConfirm }: Props) {
+export function NumericKeypadModal({ visible, title, value, onDigit, onBackspace, onCancel, onConfirm, allowNegative, onToggleSign }: Props) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -49,6 +51,11 @@ export function NumericKeypadModal({ visible, title, value, onDigit, onBackspace
             <PressableScale scaleTo={0.94} onPress={onBackspace} style={styles.key}>
               <Text style={[styles.keyLabel, { color: colors.orange, fontSize: 16 }]}>⌫</Text>
             </PressableScale>
+            {allowNegative && (
+              <PressableScale scaleTo={0.94} onPress={onToggleSign} style={styles.key}>
+                <Text style={[styles.keyLabel, { color: colors.cyan }]}>+/−</Text>
+              </PressableScale>
+            )}
           </View>
           <View style={styles.actions}>
             <Button label="Annuler" onPress={onCancel} variant="secondary" size="md" style={styles.actionBtn} />

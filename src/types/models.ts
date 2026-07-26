@@ -52,8 +52,31 @@ export interface TrouDuCulHistoryEntry {
   variants: TrouDuCulVariants;
 }
 
-export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame;
-export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry;
+export interface SkyjoRound {
+  round: number;
+  scores: Record<string, number>;
+}
+
+export interface SkyjoLiveGame {
+  gameId: 'skyjo';
+  playerIds: string[];
+  currentRound: number;
+  rounds: SkyjoRound[];
+}
+
+export interface SkyjoHistoryEntry {
+  id: string;
+  gameId: 'skyjo';
+  date: string;
+  playerIds: string[];
+  rounds: SkyjoRound[];
+  totals: Record<string, number>;
+  ranking: string[];
+  roundsPlayed: number;
+}
+
+export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame;
+export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;
