@@ -3,10 +3,10 @@ import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
+import { LiveScreenLayout } from '../../components/LiveScreenLayout';
 import { NumericKeypadModal } from '../../components/NumericKeypadModal';
 import { PressableScale } from '../../components/PressableScale';
 import { RankingRow } from '../../components/RankingRow';
-import { ScreenContainer } from '../../components/ScreenContainer';
 import { getGameOrThrow } from '../../games/registry';
 import { SKYJO_END_THRESHOLD } from '../../games/skyjo';
 import { HomeStackNavProp } from '../../navigation/types';
@@ -51,90 +51,98 @@ export function SkyjoLiveScreen() {
   };
 
   return (
-    <ScreenContainer contentStyle={{ paddingHorizontal: 16 }}>
-      <View style={styles.header}>
-        <BackButton size={32} onPress={() => navigation.goBack()} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Skyjo</Text>
-          <Text style={styles.subtitle}>Manche {roundNum}</Text>
-        </View>
-        <PressableScale onPress={finishNow} style={styles.finishBtn}>
-          <Text style={styles.finishLabel}>Terminer</Text>
-        </PressableScale>
-      </View>
-
-      <View style={styles.infoRow}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Fin de partie à</Text>
-          <Text style={[styles.infoValue, { color: colors.amber }]}>{SKYJO_END_THRESHOLD} pts</Text>
-        </View>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Manches jouées</Text>
-          <Text style={[styles.infoValue, { color: colors.teal }]}>{liveGame.rounds.length}</Text>
-        </View>
-      </View>
-      <Text style={styles.legend}>Entre le score de fin de manche de chaque joueur (peut être négatif).</Text>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableWrap}>
-        <View>
-          <View style={styles.row}>
-            <View style={{ width: LABEL_COL }} />
-            {liveGame.playerIds.map((pid) => (
-              <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 8 }}>
-                <View style={[styles.headerDot, { backgroundColor: playersMap[pid]?.color }]} />
-                <Text style={styles.headerName} numberOfLines={1}>
-                  {playersMap[pid]?.name}
-                </Text>
+    <>
+      <LiveScreenLayout
+        header={
+          <>
+            <View style={styles.header}>
+              <BackButton size={32} onPress={() => navigation.goBack()} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>Skyjo</Text>
+                <Text style={styles.subtitle}>Manche {roundNum}</Text>
               </View>
-            ))}
-          </View>
+              <PressableScale onPress={finishNow} style={styles.finishBtn}>
+                <Text style={styles.finishLabel}>Terminer</Text>
+              </PressableScale>
+            </View>
 
-          {liveGame.rounds.map((r) => {
-            const isCurrent = r.round === roundNum;
-            return (
-              <View key={r.round} style={[styles.row, isCurrent && { backgroundColor: 'rgba(123,97,255,0.15)' }]}>
-                <View style={{ width: LABEL_COL, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={[styles.rowLabel, { color: isCurrent ? colors.violet : colors.textMuted }]}>{r.round}</Text>
-                </View>
-                {liveGame.playerIds.map((pid) => {
-                  const v = r.scores[pid];
-                  const filled = v !== undefined;
-                  const bg = filled ? colors.surfaceAlt2 : isCurrent ? colors.violet : colors.surfaceAlt;
-                  const fg = filled ? colors.textPrimary : colors.white;
-                  return (
-                    <View key={pid} style={{ width: CELL_COL, padding: 4, alignItems: 'center' }}>
-                      <PressableScale scaleTo={0.92} onPress={() => openCell(r.round, pid)} style={[styles.cell, { backgroundColor: bg }]}>
-                        <Text style={{ color: fg, fontSize: 13, fontWeight: '600' }}>{filled ? String(v) : '–'}</Text>
-                      </PressableScale>
-                    </View>
-                  );
-                })}
+            <View style={styles.infoRow}>
+              <View style={styles.infoCard}>
+                <Text style={styles.infoLabel}>Fin de partie à</Text>
+                <Text style={[styles.infoValue, { color: colors.amber }]}>{SKYJO_END_THRESHOLD} pts</Text>
               </View>
-            );
-          })}
-        </View>
-      </ScrollView>
-
-      <Text style={styles.sectionTitle}>Classement en direct</Text>
-      <View style={{ gap: 6, marginBottom: 16 }}>
-        {ranking.map((r, idx) => (
-          <RankingRow
-            key={r.id}
-            position={idx + 1}
-            name={playersMap[r.id]?.name ?? '?'}
-            color={playersMap[r.id]?.color ?? '#888'}
-            scoreLabel={`${r.total} pts`}
-            highlight={idx === 0}
+              <View style={styles.infoCard}>
+                <Text style={styles.infoLabel}>Manches jouées</Text>
+                <Text style={[styles.infoValue, { color: colors.teal }]}>{liveGame.rounds.length}</Text>
+              </View>
+            </View>
+          </>
+        }
+        footer={
+          <Button
+            label={isLastRound ? 'Terminer la partie 🏁' : 'Manche suivante →'}
+            disabled={!allFilled}
+            onPress={nextRound}
+            size="md"
           />
-        ))}
-      </View>
+        }
+      >
+        <Text style={styles.legend}>Entre le score de fin de manche de chaque joueur (peut être négatif).</Text>
 
-      <Button
-        label={isLastRound ? 'Terminer la partie 🏁' : 'Manche suivante →'}
-        disabled={!allFilled}
-        onPress={nextRound}
-        size="md"
-      />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableWrap}>
+          <View>
+            <View style={styles.row}>
+              <View style={{ width: LABEL_COL }} />
+              {liveGame.playerIds.map((pid) => (
+                <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 8 }}>
+                  <View style={[styles.headerDot, { backgroundColor: playersMap[pid]?.color }]} />
+                  <Text style={styles.headerName} numberOfLines={1}>
+                    {playersMap[pid]?.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {liveGame.rounds.map((r) => {
+              const isCurrent = r.round === roundNum;
+              return (
+                <View key={r.round} style={[styles.row, isCurrent && { backgroundColor: 'rgba(123,97,255,0.15)' }]}>
+                  <View style={{ width: LABEL_COL, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={[styles.rowLabel, { color: isCurrent ? colors.violet : colors.textMuted }]}>{r.round}</Text>
+                  </View>
+                  {liveGame.playerIds.map((pid) => {
+                    const v = r.scores[pid];
+                    const filled = v !== undefined;
+                    const bg = filled ? colors.surfaceAlt2 : isCurrent ? colors.violet : colors.surfaceAlt;
+                    const fg = filled ? colors.textPrimary : colors.white;
+                    return (
+                      <View key={pid} style={{ width: CELL_COL, padding: 4, alignItems: 'center' }}>
+                        <PressableScale scaleTo={0.92} onPress={() => openCell(r.round, pid)} style={[styles.cell, { backgroundColor: bg }]}>
+                          <Text style={{ color: fg, fontSize: 13, fontWeight: '600' }}>{filled ? String(v) : '–'}</Text>
+                        </PressableScale>
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Classement en direct</Text>
+        <View style={{ gap: 6 }}>
+          {ranking.map((r, idx) => (
+            <RankingRow
+              key={r.id}
+              position={idx + 1}
+              name={playersMap[r.id]?.name ?? '?'}
+              color={playersMap[r.id]?.color ?? '#888'}
+              scoreLabel={`${r.total} pts`}
+              highlight={idx === 0}
+            />
+          ))}
+        </View>
+      </LiveScreenLayout>
 
       <NumericKeypadModal
         visible={!!modal}
@@ -147,7 +155,7 @@ export function SkyjoLiveScreen() {
         allowNegative
         onToggleSign={modalToggleSign}
       />
-    </ScreenContainer>
+    </>
   );
 }
 

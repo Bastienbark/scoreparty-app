@@ -3,9 +3,9 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
+import { LiveScreenLayout } from '../../components/LiveScreenLayout';
 import { PressableScale } from '../../components/PressableScale';
 import { RankingRow } from '../../components/RankingRow';
-import { ScreenContainer } from '../../components/ScreenContainer';
 import { getGameOrThrow } from '../../games/registry';
 import { activeVariantLabels, roleForPosition, roleStyle } from '../../games/trouDuCul';
 import { HomeStackNavProp } from '../../navigation/types';
@@ -47,18 +47,28 @@ export function TrouDuCulLiveScreen() {
   };
 
   return (
-    <ScreenContainer contentStyle={{ paddingHorizontal: 16 }}>
-      <View style={styles.header}>
-        <BackButton size={32} onPress={() => navigation.goBack()} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{game.name}</Text>
-          <Text style={styles.subtitle}>Manche {roundNum}/5</Text>
+    <LiveScreenLayout
+      header={
+        <View style={styles.header}>
+          <BackButton size={32} onPress={() => navigation.goBack()} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{game.name}</Text>
+            <Text style={styles.subtitle}>Manche {roundNum}/5</Text>
+          </View>
+          <PressableScale onPress={finishNow} style={styles.finishBtn}>
+            <Text style={styles.finishLabel}>Terminer</Text>
+          </PressableScale>
         </View>
-        <PressableScale onPress={finishNow} style={styles.finishBtn}>
-          <Text style={styles.finishLabel}>Terminer</Text>
-        </PressableScale>
-      </View>
-
+      }
+      footer={
+        <Button
+          label={isLastRound ? 'Terminer la partie 🏁' : 'Manche suivante →'}
+          disabled={!roundComplete}
+          onPress={nextRound}
+          size="md"
+        />
+      }
+    >
       <Text style={styles.variants}>Variantes : {variantsLabel}</Text>
       <Text style={styles.instruction}>Touche les joueurs dans l'ordre où ils se sont débarrassés de leurs cartes 👇</Text>
 
@@ -93,7 +103,7 @@ export function TrouDuCulLiveScreen() {
       )}
 
       <Text style={styles.sectionTitle}>Classement général cumulé</Text>
-      <View style={{ gap: 6, marginBottom: 16 }}>
+      <View style={{ gap: 6 }}>
         {ranking.map((r, idx) => (
           <RankingRow
             key={r.id}
@@ -104,14 +114,7 @@ export function TrouDuCulLiveScreen() {
           />
         ))}
       </View>
-
-      <Button
-        label={isLastRound ? 'Terminer la partie 🏁' : 'Manche suivante →'}
-        disabled={!roundComplete}
-        onPress={nextRound}
-        size="md"
-      />
-    </ScreenContainer>
+    </LiveScreenLayout>
   );
 }
 
