@@ -8,13 +8,11 @@ import { playerRoleCounts, rolePercent, roleStyle, ROLE_STATS_ORDER } from '../g
 import { useAppStore } from '../state/store';
 import { HistoryEntry, TrouDuCulHistoryEntry } from '../types/models';
 import { colors, fonts, radii } from '../theme/tokens';
-import { fmtDate } from '../utils/date';
 
 interface SingleStats {
   gamesPlayed: number;
   winRate: string;
   avgScore: string | number;
-  chart: { pct: string; label: string; color: string }[];
   tdcRoles: { role: string; pct: number }[] | null;
 }
 
@@ -26,8 +24,6 @@ function buildSingle(pid: string, history: HistoryEntry[]): SingleStats | null {
   const avgScore = crGames.length
     ? Math.round(crGames.reduce((sum, h) => sum + getGame(h.gameId)!.scoreValue(h as never, pid), 0) / crGames.length)
     : 0;
-  const sorted = [...games].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-6);
-  const maxVal = Math.max(1, ...sorted.map((h) => getGame(h.gameId)!.scoreValue(h as never, pid)));
 
   const tdcGames = games.filter((h) => h.gameId === 'trou-du-cul') as TrouDuCulHistoryEntry[];
   let tdcRoles: { role: string; pct: number }[] | null = null;
@@ -40,14 +36,6 @@ function buildSingle(pid: string, history: HistoryEntry[]): SingleStats | null {
     gamesPlayed: games.length,
     winRate: `${Math.round((wins / games.length) * 100)}%`,
     avgScore: crGames.length ? avgScore : '–',
-    chart: sorted.map((h) => {
-      const v = getGame(h.gameId)!.scoreValue(h as never, pid);
-      return {
-        pct: `${Math.max(8, Math.round((v / maxVal) * 100))}%`,
-        label: fmtDate(h.date).split(' ')[0],
-        color: getGame(h.gameId)!.color,
-      };
-    }),
     tdcRoles,
   };
 }
@@ -168,18 +156,6 @@ export function StatsScreen() {
                 </View>
               </View>
 
-              <Text style={styles.sectionTitle}>Évolution</Text>
-              <View style={styles.chart}>
-                {single.chart.map((b, idx) => (
-                  <View key={idx} style={styles.barCol}>
-                    <View style={styles.barTrack}>
-                      <View style={[styles.bar, { height: b.pct as `${number}%`, backgroundColor: b.color }]} />
-                    </View>
-                    <Text style={styles.barLabel}>{b.label}</Text>
-                  </View>
-                ))}
-              </View>
-
               {single.tdcRoles && (
                 <>
                   <Text style={styles.sectionTitle}>Rôles — Trou du Cul</Text>
@@ -266,11 +242,6 @@ const styles = StyleSheet.create({
   tileLabel: { fontSize: 11, color: colors.textMuted },
   tileValue: { fontFamily: fonts.headingBold, fontSize: 22, fontWeight: '700', marginTop: 4 },
   sectionTitle: { fontFamily: fonts.heading, fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 10 },
-  chart: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 100, backgroundColor: colors.surface, borderRadius: radii.md, padding: 12, marginBottom: 20 },
-  barCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: 4 },
-  barTrack: { width: '100%', flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
-  bar: { width: '100%', maxWidth: 22, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
-  barLabel: { fontSize: 9, color: colors.textMutedDark },
   hint: { fontSize: 12, color: colors.textMuted, marginBottom: 8 },
   empty: { fontSize: 13, color: colors.textMutedDark, textAlign: 'center', paddingVertical: 20 },
   compareHeader: { flexDirection: 'row', gap: 6, marginBottom: 10 },
