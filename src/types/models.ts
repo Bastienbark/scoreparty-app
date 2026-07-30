@@ -96,8 +96,23 @@ export interface QwirkleHistoryEntry {
   ranking: string[];
 }
 
-export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame;
-export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry | QwirkleHistoryEntry;
+export interface Trek12LiveGame {
+  gameId: 'trek-12';
+  playerIds: string[];
+  scores: Record<string, number>;
+}
+
+export interface Trek12HistoryEntry {
+  id: string;
+  gameId: 'trek-12';
+  date: string;
+  playerIds: string[];
+  totals: Record<string, number>;
+  ranking: string[];
+}
+
+export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame | Trek12LiveGame;
+export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry | QwirkleHistoryEntry | Trek12HistoryEntry;
 
 export interface SetupState {
   gameId: string | null;

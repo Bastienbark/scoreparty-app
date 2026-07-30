@@ -125,6 +125,8 @@ interface AppState {
   openQwirkleEntry: (pid: string) => void;
   qwirkleDeleteTurn: (index: number) => void;
 
+  openTrek12Score: (pid: string) => void;
+
   tdcTapPlayer: (pid: string) => void;
   tdcResetRound: () => void;
   tdcNextRound: () => void;
@@ -389,6 +391,11 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ liveGame: { ...live, turns }, modal: null });
       return;
     }
+    if (live.gameId === 'trek-12') {
+      const scores = { ...live.scores, [modal.pid]: Number(modal.value || 0) };
+      set({ liveGame: { ...live, scores }, modal: null });
+      return;
+    }
     if (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo') return;
     const { round, pid, value } = modal;
     const rounds = live.rounds.map((r) => (r.round === round ? { ...r, scores: { ...r.scores, [pid]: Number(value || 0) } } : r));
@@ -424,6 +431,13 @@ export const useAppStore = create<AppState>((set, get) => {
       const turns = live.turns.filter((_, i) => i !== index);
       return { liveGame: { ...live, turns } };
     }),
+
+  openTrek12Score: (pid) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'trek-12') return;
+    const existing = live.scores[pid];
+    set({ modal: { round: 0, pid, value: existing !== undefined ? String(existing) : '' } });
+  },
 
   tdcTapPlayer: (pid) =>
     set((s) => {

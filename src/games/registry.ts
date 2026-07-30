@@ -1,6 +1,7 @@
 import { cinqRoisGame } from './cinqRois';
 import { qwirkleGame } from './qwirkle';
 import { skyjoGame } from './skyjo';
+import { trek12Game } from './trek12';
 import { trouDuCulGame } from './trouDuCul';
 import type { GameDef } from './types';
 
@@ -13,7 +14,7 @@ import type { GameDef } from './types';
  * Home, Setup, History, Stats and Rules all read from this registry and
  * need no further changes.
  */
-export const GAMES: GameDef[] = [cinqRoisGame, trouDuCulGame, skyjoGame, qwirkleGame];
+export const GAMES: GameDef[] = [cinqRoisGame, trouDuCulGame, skyjoGame, qwirkleGame, trek12Game];
 
 export function getGame(id: string): GameDef | undefined {
   return GAMES.find((g) => g.id === id);

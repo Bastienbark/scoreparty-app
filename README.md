@@ -78,6 +78,7 @@ src/
     trouDuCul.ts             Président : attribution des rôles, classement cumulé
     skyjo.ts                 Skyjo : manches illimitées, seuil de fin de partie, classement
     qwirkle.ts               Qwirkle : score additif par tour, 2 à 4 joueurs, classement
+    trek12.ts                Trek 12 : dés virtuels + score final unique par joueur
     registry.ts              GAMES[] — liste des jeux disponibles
   state/store.ts           Store Zustand (joueurs, historique, partie en cours, filtres, sync cloud...)
   state/seed.ts             Données de démonstration au premier lancement
@@ -102,3 +103,4 @@ Aucun autre écran (Accueil, Setup, Historique, Stats, Règles) n'a besoin d'êt
 - **Président** *(id technique `trou-du-cul`, inchangé pour rester compatible avec les parties déjà enregistrées)* — 5 manches fixes ; le rôle (Président / Vice-Président / Neutre(s) / Vice-Trou du Cul / Trou du Cul) est déduit automatiquement de l'ordre de sortie et du nombre de joueurs ; classement cumulé sur les points de position ; les variantes (Révolution, Bombes/Carrés, Putsch, Suites) sont indicatives uniquement.
 - **Skyjo** — manches illimitées ; à chaque manche, on saisit le score de fin de manche de chaque joueur (peut être négatif) ; la partie s'arrête dès qu'un joueur atteint 100 points cumulés ; le total le plus bas gagne.
 - **Qwirkle** — 2 à 4 joueurs ; pas de manches simultanées, on ajoute librement les points marqués par un joueur à chaque tour (bonus Qwirkle et bonus de fin de partie inclus manuellement dans le score saisi) ; le total le plus haut gagne.
+- **Trek 12** — l'app ne connaît volontairement pas les règles précises de tracé/zones de ce jeu (pour ne pas les reproduire de façon erronée) : elle fournit deux **dés virtuels** (jaune 0-5, rouge 1-6, chacun relançable au tap, avec affichage de la somme) pour remplacer les dés physiques perdus, et un simple score final par joueur — le plus haut gagne. Dis-moi si tu veux que la logique de score officielle (zones, tracés) soit implémentée plus précisément.

@@ -3,6 +3,7 @@ import { useAppStore } from '../state/store';
 import { CinqRoisLiveScreen } from '../screens/live/CinqRoisLiveScreen';
 import { QwirkleLiveScreen } from '../screens/live/QwirkleLiveScreen';
 import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
+import { Trek12LiveScreen } from '../screens/live/Trek12LiveScreen';
 import { TrouDuCulLiveScreen } from '../screens/live/TrouDuCulLiveScreen';
 
 /**
@@ -14,6 +15,7 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   'trou-du-cul': TrouDuCulLiveScreen,
   skyjo: SkyjoLiveScreen,
   qwirkle: QwirkleLiveScreen,
+  'trek-12': Trek12LiveScreen,
 };
 
 export function LiveScreenRouter() {
