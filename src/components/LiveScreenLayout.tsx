@@ -22,7 +22,7 @@ export function LiveScreenLayout({ header, children, footer }: Props) {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>{header}</View>
+      <View style={[styles.header, { paddingTop: 20 + insets.top }]}>{header}</View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {children}
       </ScrollView>
@@ -33,7 +33,7 @@ export function LiveScreenLayout({ header, children, footer }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: 16, paddingTop: 20 },
+  header: { paddingHorizontal: 16 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 16 },
   footer: {
