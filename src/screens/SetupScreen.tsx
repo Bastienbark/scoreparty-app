@@ -26,8 +26,10 @@ export function SetupScreen() {
   const gameChosen = !!setup.gameId;
   const isTdc = setup.gameId === 'trou-du-cul';
   const selectedGame = GAMES.find((g) => g.id === setup.gameId);
+  const minPlayers = selectedGame?.minPlayers ?? 2;
+  const maxPlayers = selectedGame?.maxPlayers ?? 7;
   const count = setup.selectedPlayerIds.length;
-  const canStart = gameChosen && count >= 2 && count <= 7;
+  const canStart = gameChosen && count >= minPlayers && count <= maxPlayers;
 
   return (
     <ScreenContainer>
@@ -65,7 +67,7 @@ export function SetupScreen() {
 
       {gameChosen && (
         <>
-          <SectionLabel>2. Choisis les joueurs ({count}/7)</SectionLabel>
+          <SectionLabel>2. Choisis les joueurs ({count}/{maxPlayers})</SectionLabel>
           <View style={styles.chipsWrap}>
             {players.map((p) => (
               <Chip
@@ -113,7 +115,7 @@ export function SetupScreen() {
           )}
 
           <Text style={styles.hint}>
-            Sélectionne 2 à 7 joueurs ({count} sélectionné{count > 1 ? 's' : ''})
+            Sélectionne {minPlayers} à {maxPlayers} joueurs ({count} sélectionné{count > 1 ? 's' : ''})
           </Text>
           <Button
             label="Commencer la partie 🚀"

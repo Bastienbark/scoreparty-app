@@ -16,7 +16,11 @@ export function ResumeGameBanner() {
   const game = getGame(liveGame.gameId);
   if (!game) return null;
 
-  const roundLabel = Number.isFinite(game.totalRounds) ? `Manche ${liveGame.currentRound}/${game.totalRounds}` : `Manche ${liveGame.currentRound}`;
+  const roundLabel = 'currentRound' in liveGame
+    ? Number.isFinite(game.totalRounds)
+      ? `Manche ${liveGame.currentRound}/${game.totalRounds}`
+      : `Manche ${liveGame.currentRound}`
+    : `${liveGame.turns.length} tour${liveGame.turns.length > 1 ? 's' : ''} joué${liveGame.turns.length > 1 ? 's' : ''}`;
 
   return (
     <PressableScale scaleTo={0.98} onPress={() => navigation.navigate('Live')} style={[styles.card, { borderColor: game.color }]}>

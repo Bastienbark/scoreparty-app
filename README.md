@@ -77,6 +77,7 @@ src/
     cinqRois.ts             Les Cinq Rois : atout/donne par manche, pénalités, classement
     trouDuCul.ts             Président : attribution des rôles, classement cumulé
     skyjo.ts                 Skyjo : manches illimitées, seuil de fin de partie, classement
+    qwirkle.ts               Qwirkle : score additif par tour, 2 à 4 joueurs, classement
     registry.ts              GAMES[] — liste des jeux disponibles
   state/store.ts           Store Zustand (joueurs, historique, partie en cours, filtres, sync cloud...)
   state/seed.ts             Données de démonstration au premier lancement
@@ -100,3 +101,4 @@ Aucun autre écran (Accueil, Setup, Historique, Stats, Règles) n'a besoin d'êt
 - **Les Cinq Rois** — 11 manches fixes ; l'Atout de la manche suit son numéro (3, 4, … 10, V, D, R) ; pénalités 3–10 = valeur faciale, V/D/R = 10, Atout = 20, Joker = 50 ; le distributeur tourne à chaque manche ; le total le plus bas gagne.
 - **Président** *(id technique `trou-du-cul`, inchangé pour rester compatible avec les parties déjà enregistrées)* — 5 manches fixes ; le rôle (Président / Vice-Président / Neutre(s) / Vice-Trou du Cul / Trou du Cul) est déduit automatiquement de l'ordre de sortie et du nombre de joueurs ; classement cumulé sur les points de position ; les variantes (Révolution, Bombes/Carrés, Putsch, Suites) sont indicatives uniquement.
 - **Skyjo** — manches illimitées ; à chaque manche, on saisit le score de fin de manche de chaque joueur (peut être négatif) ; la partie s'arrête dès qu'un joueur atteint 100 points cumulés ; le total le plus bas gagne.
+- **Qwirkle** — 2 à 4 joueurs ; pas de manches simultanées, on ajoute librement les points marqués par un joueur à chaque tour (bonus Qwirkle et bonus de fin de partie inclus manuellement dans le score saisi) ; le total le plus haut gagne.

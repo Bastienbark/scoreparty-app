@@ -21,6 +21,9 @@ export interface GameDef<TLive extends LiveGame = LiveGame, THistory extends His
   hasVariants: boolean;
   variantDefs: VariantDef[];
   rulesContent: RulesTheme[];
+  /** Selectable player count in Setup. Both default to 2/7 (the app's generic range) when omitted. */
+  minPlayers?: number;
+  maxPlayers?: number;
 
   createLiveGame(playerIds: string[], variants: TrouDuCulVariants): TLive;
   isRoundComplete(live: TLive, roundNum: number): boolean;

@@ -75,8 +75,29 @@ export interface SkyjoHistoryEntry {
   roundsPlayed: number;
 }
 
-export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame;
-export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry;
+export interface QwirkleTurn {
+  playerId: string;
+  points: number;
+}
+
+export interface QwirkleLiveGame {
+  gameId: 'qwirkle';
+  playerIds: string[];
+  turns: QwirkleTurn[];
+}
+
+export interface QwirkleHistoryEntry {
+  id: string;
+  gameId: 'qwirkle';
+  date: string;
+  playerIds: string[];
+  turns: QwirkleTurn[];
+  totals: Record<string, number>;
+  ranking: string[];
+}
+
+export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame;
+export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry | QwirkleHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
-import { getGameOrThrow } from '../games/registry';
+import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
   HistoryEntry,
@@ -121,6 +121,9 @@ interface AppState {
   crNextRound: () => void;
   skyjoNextRound: () => void;
 
+  openQwirkleEntry: (pid: string) => void;
+  qwirkleDeleteTurn: (index: number) => void;
+
   tdcTapPlayer: (pid: string) => void;
   tdcResetRound: () => void;
   tdcNextRound: () => void;
@@ -147,6 +150,11 @@ interface AppState {
 }
 
 const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '' };
+
+function maxPlayersFor(gameId: string | null): number {
+  if (!gameId) return 7;
+  return getGame(gameId)?.maxPlayers ?? 7;
+}
 
 export const useAppStore = create<AppState>((set, get) => {
   const schedulePush = () => {
@@ -304,7 +312,8 @@ export const useAppStore = create<AppState>((set, get) => {
   toggleSetupPlayer: (pid) =>
     set((s) => {
       const cur = s.setup.selectedPlayerIds;
-      const sel = cur.includes(pid) ? cur.filter((x) => x !== pid) : cur.length < 7 ? [...cur, pid] : cur;
+      const max = maxPlayersFor(s.setup.gameId);
+      const sel = cur.includes(pid) ? cur.filter((x) => x !== pid) : cur.length < max ? [...cur, pid] : cur;
       return { setup: { ...s.setup, selectedPlayerIds: sel } };
     }),
 
@@ -317,12 +326,13 @@ export const useAppStore = create<AppState>((set, get) => {
     set((s) => {
       const players = [...s.players, player];
       saveJSON(PLAYERS_KEY, players);
+      const max = maxPlayersFor(s.setup.gameId);
       return {
         players,
         setup: {
           ...s.setup,
           newPlayerName: '',
-          selectedPlayerIds: s.setup.selectedPlayerIds.length < 7 ? [...s.setup.selectedPlayerIds, player.id] : s.setup.selectedPlayerIds,
+          selectedPlayerIds: s.setup.selectedPlayerIds.length < max ? [...s.setup.selectedPlayerIds, player.id] : s.setup.selectedPlayerIds,
         },
       };
     });
@@ -334,8 +344,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
   startGame: () => {
     const { gameId, selectedPlayerIds, variants } = get().setup;
-    if (!gameId || selectedPlayerIds.length < 2 || selectedPlayerIds.length > 7) return false;
+    if (!gameId) return false;
     const game = getGameOrThrow(gameId);
+    const min = game.minPlayers ?? 2;
+    const max = game.maxPlayers ?? 7;
+    if (selectedPlayerIds.length < min || selectedPlayerIds.length > max) return false;
     const liveGame = game.createLiveGame(selectedPlayerIds, variants);
     set({ liveGame, recapSaved: false });
     return true;
@@ -366,7 +379,14 @@ export const useAppStore = create<AppState>((set, get) => {
   modalConfirm: () => {
     const modal = get().modal;
     const live = get().liveGame;
-    if (!modal || !live || (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo')) return;
+    if (!modal || !live) return;
+    if (live.gameId === 'qwirkle') {
+      const points = Number(modal.value || 0);
+      const turns = [...live.turns, { playerId: modal.pid, points }];
+      set({ liveGame: { ...live, turns }, modal: null });
+      return;
+    }
+    if (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo') return;
     const { round, pid, value } = modal;
     const rounds = live.rounds.map((r) => (r.round === round ? { ...r, scores: { ...r.scores, [pid]: Number(value || 0) } } : r));
     set({ liveGame: { ...live, rounds } as LiveGame, modal: null });
@@ -386,6 +406,20 @@ export const useAppStore = create<AppState>((set, get) => {
       const nextRoundNum = live.currentRound + 1;
       const rounds = [...live.rounds, { round: nextRoundNum, scores: {} }];
       return { liveGame: { ...live, rounds, currentRound: nextRoundNum } };
+    }),
+
+  openQwirkleEntry: (pid) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'qwirkle') return;
+    set({ modal: { round: 0, pid, value: '' } });
+  },
+
+  qwirkleDeleteTurn: (index) =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'qwirkle') return {};
+      const turns = live.turns.filter((_, i) => i !== index);
+      return { liveGame: { ...live, turns } };
     }),
 
   tdcTapPlayer: (pid) =>

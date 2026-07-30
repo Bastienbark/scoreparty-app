@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../state/store';
 import { CinqRoisLiveScreen } from '../screens/live/CinqRoisLiveScreen';
+import { QwirkleLiveScreen } from '../screens/live/QwirkleLiveScreen';
 import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
 import { TrouDuCulLiveScreen } from '../screens/live/TrouDuCulLiveScreen';
 
@@ -12,6 +13,7 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   'cinq-rois': CinqRoisLiveScreen,
   'trou-du-cul': TrouDuCulLiveScreen,
   skyjo: SkyjoLiveScreen,
+  qwirkle: QwirkleLiveScreen,
 };
 
 export function LiveScreenRouter() {
