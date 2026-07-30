@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
 import { getGameOrThrow } from '../games/registry';
@@ -481,3 +482,20 @@ useAppStore.subscribe((state, prevState) => {
     AsyncStorage.removeItem(LIVE_GAME_KEY).catch(() => {});
   }
 });
+
+// Retry a failed cloud sync automatically once connectivity is likely back —
+// on returning to the app (AppState) and, on web, on the browser's own
+// 'online' event — instead of leaving it stuck on "Erreur" until the next
+// unrelated change or a manual tap on "Sauvegarder maintenant".
+function retryFailedSync() {
+  const { syncStatus, syncNow } = useAppStore.getState();
+  if (syncStatus === 'error') syncNow();
+}
+
+RNAppState.addEventListener('change', (nextState) => {
+  if (nextState === 'active') retryFailedSync();
+});
+
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  window.addEventListener('online', retryFailedSync);
+}

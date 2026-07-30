@@ -60,7 +60,8 @@ Par défaut l'app stocke tout en local (`AsyncStorage` / `localStorage`) : ça m
 
 ### Comment ça marche
 
-- À chaque partie enregistrée ou joueur ajouté, l'app pousse `{ players, history }` dans le document Firestore `syncs/{code}` (avec un léger anti-rebond de 1,5 s).
+- La donnée qui compte (joueurs, historique des parties terminées) est **toujours écrite en local d'abord** (`AsyncStorage`/`localStorage`), réseau ou pas — c'est ce qui la fait apparaître dans l'Historique immédiatement. Le push Firestore n'est qu'une copie de secours par-dessus, jamais un prérequis pour que la partie soit "vraiment" enregistrée.
+- À chaque partie enregistrée ou joueur ajouté, l'app tente de pousser `{ players, history }` vers le document Firestore `syncs/{code}` (anti-rebond 1,5 s). En cas d'échec (pas de réseau au moment du push), le statut passe sur "Erreur" et **une nouvelle tentative se relance automatiquement** dès que l'app revient au premier plan ou que le navigateur signale le retour du réseau (event `online`) — pas besoin de rouvrir une action ni de taper sur "Sauvegarder maintenant".
 - Bouton **"Restaurer avec un code"** : saisir un code existant remplace joueurs + historique de l'appareil actuel par cette sauvegarde (confirmation demandée avant d'écraser).
 - **Sans authentification** : quiconque connaît le code peut lire/écrire cette sauvegarde. C'est un choix assumé pour rester sans compte utilisateur — acceptable pour des données peu sensibles (pseudos et scores de jeux de société), à condition de ne pas partager le code publiquement. Les règles Firestore (`firestore.rules`) rejettent au moins les codes trop courts pour limiter le scan/brute-force.
 - Si aucune variable Firebase n'est définie, la carte l'indique et l'app continue de fonctionner normalement en local uniquement.
