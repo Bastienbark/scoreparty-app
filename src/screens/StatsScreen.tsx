@@ -14,6 +14,7 @@ interface SingleStats {
   winRate: string;
   avgScore: string | number;
   tdcRoles: { role: string; pct: number }[] | null;
+  perGame: { gameId: string; name: string; color: string; played: number; winRate: string }[];
 }
 
 function buildSingle(pid: string, history: HistoryEntry[]): SingleStats | null {
@@ -32,11 +33,19 @@ function buildSingle(pid: string, history: HistoryEntry[]): SingleStats | null {
     tdcRoles = ROLE_STATS_ORDER.map((role) => ({ role, pct: rolePercent(breakdown, role) }));
   }
 
+  const playedGameIds = GAMES.filter((g) => games.some((h) => h.gameId === g.id));
+  const perGame = playedGameIds.map((g) => {
+    const gGames = games.filter((h) => h.gameId === g.id);
+    const gWins = gGames.filter((h) => g.rankingIds(h as never)[0] === pid).length;
+    return { gameId: g.id, name: g.name, color: g.color, played: gGames.length, winRate: `${Math.round((gWins / gGames.length) * 100)}%` };
+  });
+
   return {
     gamesPlayed: games.length,
     winRate: `${Math.round((wins / games.length) * 100)}%`,
     avgScore: crGames.length ? avgScore : '–',
     tdcRoles,
+    perGame,
   };
 }
 
@@ -47,32 +56,38 @@ export function StatsScreen() {
   const statsPlayerId = useAppStore((s) => s.statsPlayerId);
   const statsCompareIds = useAppStore((s) => s.statsCompareIds);
   const statsCompareGameId = useAppStore((s) => s.statsCompareGameId);
+  const statsHeadToHeadOnly = useAppStore((s) => s.statsHeadToHeadOnly);
   const setStatsMode = useAppStore((s) => s.setStatsMode);
   const selectStatsPlayer = useAppStore((s) => s.selectStatsPlayer);
   const toggleStatsCompare = useAppStore((s) => s.toggleStatsCompare);
   const setStatsCompareGameId = useAppStore((s) => s.setStatsCompareGameId);
+  const toggleStatsHeadToHead = useAppStore((s) => s.toggleStatsHeadToHead);
   const playerById = useAppStore((s) => s.playerById);
 
   const single = useMemo(() => (statsPlayerId ? buildSingle(statsPlayerId, history) : null), [statsPlayerId, history]);
 
   const compare = useMemo(() => {
     if (statsCompareIds.length < 2) return null;
-    const statPlayerGames = (pid: string) => history.filter((h) => h.playerIds.includes(pid));
     const matchesGameFilter = (h: HistoryEntry) => !statsCompareGameId || h.gameId === statsCompareGameId;
+    // "Together": every compared player is in the game. In head-to-head mode this
+    // tightens to an exact match — the game had these players and no one else.
+    const togetherMatch = (h: HistoryEntry) => {
+      if (!statsCompareIds.every((o) => h.playerIds.includes(o))) return false;
+      return !statsHeadToHeadOnly || h.playerIds.length === statsCompareIds.length;
+    };
+    // A player's own games, restricted to head-to-head confrontations with the
+    // other compared players when the toggle is on (otherwise unrestricted, as
+    // before — this stat isn't inherently a "together" stat outside that mode).
+    const eligibleGames = (pid: string) => history.filter((h) => h.playerIds.includes(pid) && matchesGameFilter(h) && (!statsHeadToHeadOnly || togetherMatch(h)));
 
     const rowsMeta: { label: string; calc: (pid: string) => string }[] = [
       {
         label: 'Parties jouées ensemble',
-        calc: (pid) =>
-          String(
-            history.filter((h) => matchesGameFilter(h) && h.playerIds.includes(pid) && statsCompareIds.every((o) => h.playerIds.includes(o)))
-              .length,
-          ),
+        calc: () => String(history.filter((h) => matchesGameFilter(h) && togetherMatch(h)).length),
       },
       {
         label: 'Victoires',
-        calc: (pid) =>
-          String(statPlayerGames(pid).filter((h) => matchesGameFilter(h) && getGame(h.gameId)!.rankingIds(h as never)[0] === pid).length),
+        calc: (pid) => String(eligibleGames(pid).filter((h) => getGame(h.gameId)!.rankingIds(h as never)[0] === pid).length),
       },
     ];
 
@@ -80,14 +95,14 @@ export function StatsScreen() {
       rowsMeta.push({
         label: 'Score moyen (Cinq Rois)',
         calc: (pid) => {
-          const g = statPlayerGames(pid).filter((h) => h.gameId === 'cinq-rois');
+          const g = eligibleGames(pid).filter((h) => h.gameId === 'cinq-rois');
           return g.length ? String(Math.round(g.reduce((sum, h) => sum + getGame(h.gameId)!.scoreValue(h as never, pid), 0) / g.length)) : '–';
         },
       });
     }
 
     if (!statsCompareGameId || statsCompareGameId === 'trou-du-cul') {
-      const tdcBreakdown = (pid: string) => playerRoleCounts(statPlayerGames(pid).filter((h) => h.gameId === 'trou-du-cul') as TrouDuCulHistoryEntry[], pid);
+      const tdcBreakdown = (pid: string) => playerRoleCounts(eligibleGames(pid).filter((h) => h.gameId === 'trou-du-cul') as TrouDuCulHistoryEntry[], pid);
       rowsMeta.push({
         label: '% Président',
         calc: (pid) => {
@@ -108,7 +123,7 @@ export function StatsScreen() {
       players: statsCompareIds.map((id) => playerById(id)),
       rows: rowsMeta.map((rm) => ({ label: rm.label, values: statsCompareIds.map((id) => rm.calc(id)) })),
     };
-  }, [statsCompareIds, statsCompareGameId, history, playerById]);
+  }, [statsCompareIds, statsCompareGameId, statsHeadToHeadOnly, history, playerById]);
 
   return (
     <ScreenContainer>
@@ -156,6 +171,22 @@ export function StatsScreen() {
                 </View>
               </View>
 
+              {single.perGame.length > 1 && (
+                <>
+                  <Text style={styles.sectionTitle}>Taux de victoire par jeu</Text>
+                  <View style={{ gap: 6, marginBottom: 18 }}>
+                    {single.perGame.map((g) => (
+                      <View key={g.gameId} style={styles.perGameRow}>
+                        <View style={[styles.dot, { backgroundColor: g.color }]} />
+                        <Text style={styles.perGameName}>{g.name}</Text>
+                        <Text style={styles.perGamePlayed}>{g.played} partie{g.played > 1 ? 's' : ''}</Text>
+                        <Text style={[styles.perGameWinRate, { color: g.color }]}>{g.winRate}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+
               {single.tdcRoles && (
                 <>
                   <Text style={styles.sectionTitle}>Rôles — Trou du Cul</Text>
@@ -200,6 +231,15 @@ export function StatsScreen() {
             ))}
           </View>
 
+          <Chip
+            label="⚔️ Confrontation directe uniquement"
+            active={statsHeadToHeadOnly}
+            activeBg={colors.red}
+            activeFg={colors.white}
+            onPress={toggleStatsHeadToHead}
+            style={{ marginBottom: 18, alignSelf: 'flex-start' }}
+          />
+
           {compare ? (
             <>
               <View style={styles.compareHeader}>
@@ -242,6 +282,18 @@ const styles = StyleSheet.create({
   tileLabel: { fontSize: 11, color: colors.textMuted },
   tileValue: { fontFamily: fonts.headingBold, fontSize: 22, fontWeight: '700', marginTop: 4 },
   sectionTitle: { fontFamily: fonts.heading, fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 10 },
+  perGameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  perGameName: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary, fontFamily: fonts.bodySemiBold },
+  perGamePlayed: { fontSize: 11, color: colors.textMuted, marginRight: 4 },
+  perGameWinRate: { fontFamily: fonts.headingBold, fontSize: 15, fontWeight: '700' },
   hint: { fontSize: 12, color: colors.textMuted, marginBottom: 8 },
   empty: { fontSize: 13, color: colors.textMutedDark, textAlign: 'center', paddingVertical: 20 },
   compareHeader: { flexDirection: 'row', gap: 6, marginBottom: 10 },

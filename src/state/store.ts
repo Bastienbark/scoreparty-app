@@ -87,6 +87,7 @@ interface AppState {
   statsPlayerId: string | null;
   statsCompareIds: string[];
   statsCompareGameId: string | null;
+  statsHeadToHeadOnly: boolean;
 
   rulesGame: string;
   rulesQuery: string;
@@ -143,6 +144,7 @@ interface AppState {
   selectStatsPlayer: (id: string) => void;
   toggleStatsCompare: (id: string) => void;
   setStatsCompareGameId: (id: string | null) => void;
+  toggleStatsHeadToHead: () => void;
 
   selectRulesGame: (id: string) => void;
   setRulesQuery: (v: string) => void;
@@ -181,6 +183,7 @@ export const useAppStore = create<AppState>((set, get) => {
   statsPlayerId: null,
   statsCompareIds: [],
   statsCompareGameId: null,
+  statsHeadToHeadOnly: false,
 
   rulesGame: 'cinq-rois',
   rulesQuery: '',
@@ -498,6 +501,7 @@ export const useAppStore = create<AppState>((set, get) => {
       return { statsCompareIds: v };
     }),
   setStatsCompareGameId: (id) => set({ statsCompareGameId: id }),
+  toggleStatsHeadToHead: () => set((s) => ({ statsHeadToHeadOnly: !s.statsHeadToHeadOnly })),
 
   selectRulesGame: (id) => set({ rulesGame: id, rulesQuery: '', rulesOpenTheme: null }),
   setRulesQuery: (v) => set({ rulesQuery: v }),
