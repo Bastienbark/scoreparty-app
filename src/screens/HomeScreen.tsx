@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { CloudBackupCard } from '../components/CloudBackupCard';
 import { IconBadge } from '../components/IconBadge';
 import { PressableScale } from '../components/PressableScale';
+import { ResumeGameBanner } from '../components/ResumeGameBanner';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { getGame } from '../games/registry';
 import { HomeStackNavProp } from '../navigation/types';
@@ -33,6 +34,8 @@ export function HomeScreen() {
         </View>
       </View>
       <Text style={styles.subtitle}>{totalGamesLabel}</Text>
+
+      <ResumeGameBanner />
 
       <PressableScale
         onPress={() => {

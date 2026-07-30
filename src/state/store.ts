@@ -18,6 +18,12 @@ import { seedHistory, seedPlayers } from './seed';
 const PLAYERS_KEY = 'scoreparty_players';
 const HISTORY_KEY = 'scoreparty_history';
 const SYNC_CODE_KEY = 'scoreparty_sync_code';
+const LIVE_GAME_KEY = 'scoreparty_live_game';
+
+interface LiveGameSnapshot {
+  liveGame: LiveGame;
+  recapSaved: boolean;
+}
 
 export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'synced' | 'error';
 
@@ -194,7 +200,17 @@ export const useAppStore = create<AppState>((set, get) => {
       await saveString(SYNC_CODE_KEY, syncCode);
     }
 
-    set({ players, history, statsPlayerId: players[0]?.id ?? null, hydrated: true, syncCode });
+    const liveSnapshot = await loadJSON<LiveGameSnapshot>(LIVE_GAME_KEY);
+
+    set({
+      players,
+      history,
+      statsPlayerId: players[0]?.id ?? null,
+      hydrated: true,
+      syncCode,
+      liveGame: liveSnapshot?.liveGame ?? null,
+      recapSaved: liveSnapshot?.recapSaved ?? false,
+    });
   },
 
   playerById: (id) => get().players.find((p) => p.id === id) ?? { id, name: '?', color: '#888' },
@@ -267,6 +283,9 @@ export const useAppStore = create<AppState>((set, get) => {
       syncStatus: firebaseConfigured ? 'idle' : 'disabled',
       lastSyncedAt: null,
       syncError: null,
+      liveGame: null,
+      recapSaved: false,
+      modal: null,
     });
   },
 
@@ -449,4 +468,16 @@ export const useAppStore = create<AppState>((set, get) => {
   setRulesQuery: (v) => set({ rulesQuery: v }),
   toggleRulesTheme: (id) => set((s) => ({ rulesOpenTheme: s.rulesOpenTheme === id ? null : id })),
   };
+});
+
+// Persist the in-progress game continuously so it survives closing the app —
+// only committing to history on "Enregistrer" (saveGame) would otherwise
+// mean losing a whole game if the app/tab gets closed mid-way.
+useAppStore.subscribe((state, prevState) => {
+  if (state.liveGame === prevState.liveGame && state.recapSaved === prevState.recapSaved) return;
+  if (state.liveGame) {
+    saveJSON(LIVE_GAME_KEY, { liveGame: state.liveGame, recapSaved: state.recapSaved });
+  } else {
+    AsyncStorage.removeItem(LIVE_GAME_KEY).catch(() => {});
+  }
 });
