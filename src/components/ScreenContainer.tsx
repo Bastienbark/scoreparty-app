@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/tokens';
+import { clampTopInset } from '../utils/safeArea';
 
 interface Props {
   children: React.ReactNode;
@@ -11,7 +12,7 @@ interface Props {
 
 export function ScreenContainer({ children, scroll = true, contentStyle }: Props) {
   const insets = useSafeAreaInsets();
-  const outer = { paddingTop: insets.top };
+  const outer = { paddingTop: clampTopInset(insets.top) };
 
   if (!scroll) {
     return (

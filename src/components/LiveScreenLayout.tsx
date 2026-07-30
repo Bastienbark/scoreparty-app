@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/tokens';
+import { clampBottomInset, clampTopInset } from '../utils/safeArea';
 
 interface Props {
   /** Back button + title + "Terminer", and any fixed info cards right below it. */
@@ -22,11 +23,11 @@ export function LiveScreenLayout({ header, children, footer }: Props) {
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: 20 + insets.top }]}>{header}</View>
+      <View style={[styles.header, { paddingTop: 20 + clampTopInset(insets.top) }]}>{header}</View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {children}
       </ScrollView>
-      <View style={[styles.footer, { paddingBottom: 12 + insets.bottom }]}>{footer}</View>
+      <View style={[styles.footer, { paddingBottom: 12 + clampBottomInset(insets.bottom) }]}>{footer}</View>
     </View>
   );
 }

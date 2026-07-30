@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme/tokens';
 import { PressableScale } from '../components/PressableScale';
+import { clampBottomInset } from '../utils/safeArea';
 
 const TAB_META: Record<string, { icon: string; label: string }> = {
   HomeTab: { icon: '🏠', label: 'Accueil' },
@@ -22,7 +23,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   if (hidden) return null;
 
   return (
-    <View style={[styles.bar, { paddingBottom: 6 + insets.bottom }]}>
+    <View style={[styles.bar, { paddingBottom: 6 + clampBottomInset(insets.bottom) }]}>
       {state.routes.map((route, index) => {
         const meta = TAB_META[route.name];
         const focused = state.index === index;
