@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
-import { deriveCricketState, previewCricketThrow } from '../games/dartsCricket';
+import { buildTeamOf, deriveCricketState, previewCricketThrow, rerollSlotValues, resolveTeamId } from '../games/dartsCricket';
 import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
@@ -124,6 +124,7 @@ interface AppState {
   addSetupPlayer: () => void;
   toggleSetupVariant: (key: string) => void;
   selectSetupDartsStartScore: (score: number) => void;
+  toggleSetupPlayerTeam: (pid: string, idx: number) => void;
   toggleSetupCountsForContest: () => void;
   startGame: () => boolean;
 
@@ -174,7 +175,7 @@ interface AppState {
   toggleRulesTheme: (id: string) => void;
 }
 
-const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '', countsForContest: true };
+const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '', countsForContest: true, dartsTeams: {} };
 
 function maxPlayersFor(gameId: string | null): number {
   if (!gameId) return 7;
@@ -412,16 +413,25 @@ export const useAppStore = create<AppState>((set, get) => {
   selectSetupDartsStartScore: (score) =>
     set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, '301': false, '501': false, '701': false, [score]: true } } })),
 
+  toggleSetupPlayerTeam: (pid, idx) =>
+    set((s) => {
+      const current = resolveTeamId(pid, idx, s.setup.dartsTeams);
+      return { setup: { ...s.setup, dartsTeams: { ...s.setup.dartsTeams, [pid]: current === 'A' ? 'B' : 'A' } } };
+    }),
+
   toggleSetupCountsForContest: () => set((s) => ({ setup: { ...s.setup, countsForContest: !s.setup.countsForContest } })),
 
   startGame: () => {
-    const { gameId, selectedPlayerIds, variants, countsForContest } = get().setup;
+    const { gameId, selectedPlayerIds, variants, countsForContest, dartsTeams } = get().setup;
     if (!gameId) return false;
     const game = getGameOrThrow(gameId);
     const min = game.minPlayers ?? 2;
     const max = game.maxPlayers ?? 7;
     if (selectedPlayerIds.length < min || selectedPlayerIds.length > max) return false;
     const liveGame = game.createLiveGame(selectedPlayerIds, variants);
+    if (liveGame.gameId === 'darts-cricket' && liveGame.teamMode) {
+      liveGame.teamOf = buildTeamOf(selectedPlayerIds, dartsTeams);
+    }
     set({ liveGame, recapSaved: false, liveGameCountsForContest: countsForContest });
     return true;
   },
@@ -567,17 +577,24 @@ export const useAppStore = create<AppState>((set, get) => {
     const live = get().liveGame;
     if (!live || live.gameId !== 'darts-cricket') return;
     if (live.currentThrows.length >= 3) return;
-    const { winnerId, activePlayerId } = deriveCricketState(live);
-    if (winnerId || !activePlayerId) return;
+    const { winnerTeamId, activePlayerId } = deriveCricketState(live);
+    if (winnerTeamId || !activePlayerId) return;
 
     const points = dartPoints(segment, multiplier);
     const throwObj = { segment, multiplier, points };
     const preview = previewCricketThrow(live, activePlayerId, throwObj);
     const newThrows = [...live.currentThrows, throwObj];
 
-    if (preview.winnerId || newThrows.length === 3) {
-      const turn = { playerId: activePlayerId, throws: newThrows };
-      set({ liveGame: { ...live, turns: [...live.turns, turn], currentThrows: [] } });
+    if (preview.winnerTeamId || newThrows.length === 3) {
+      const turn = { playerId: activePlayerId, throws: newThrows, slotValues: live.currentSlotValues };
+      const committedLive = { ...live, turns: [...live.turns, turn], currentThrows: [] };
+      if (live.crazyMode && !preview.winnerTeamId) {
+        const { marks } = deriveCricketState(committedLive);
+        const nextSlotValues = rerollSlotValues(marks, live.playerIds, true, live.currentSlotValues);
+        set({ liveGame: { ...committedLive, currentSlotValues: nextSlotValues } });
+      } else {
+        set({ liveGame: committedLive });
+      }
     } else {
       set({ liveGame: { ...live, currentThrows: newThrows } });
     }
@@ -592,7 +609,14 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       if (live.turns.length === 0) return {};
       const lastTurn = live.turns[live.turns.length - 1];
-      return { liveGame: { ...live, turns: live.turns.slice(0, -1), currentThrows: lastTurn.throws.slice(0, -1) } };
+      return {
+        liveGame: {
+          ...live,
+          turns: live.turns.slice(0, -1),
+          currentThrows: lastTurn.throws.slice(0, -1),
+          currentSlotValues: lastTurn.slotValues,
+        },
+      };
     }),
 
   saveGame: () => {

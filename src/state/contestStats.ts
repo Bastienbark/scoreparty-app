@@ -25,11 +25,16 @@ export function buildContestLeaderboard(contestId: string, history: HistoryEntry
   for (const entry of contestGames(contestId, history)) {
     const game = getGameOrThrow(entry.gameId);
     const ranking = game.rankingIds(entry as never);
+    // Teammates sharing a team win (or any tied placement) share the same
+    // rank number here, so they each collect the same Concours points —
+    // falling back to plain array position for games without ties.
+    const groups = game.rankGroups?.(entry as never) ?? ranking.map((_, idx) => idx + 1);
     ranking.forEach((pid, idx) => {
       const row = rows.get(pid) ?? { playerId: pid, points: 0, gamesPlayed: 0, wins: 0 };
-      row.points += pointsForRank(idx + 1);
+      const rank = groups[idx] ?? idx + 1;
+      row.points += pointsForRank(rank);
       row.gamesPlayed += 1;
-      if (idx === 0) row.wins += 1;
+      if (rank === 1) row.wins += 1;
       rows.set(pid, row);
     });
   }

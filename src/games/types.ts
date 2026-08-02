@@ -38,6 +38,8 @@ export interface GameDef<TLive extends LiveGame = LiveGame, THistory extends His
 
   /** Player ids sorted best to worst for a finished game. */
   rankingIds(entry: THistory): string[];
+  /** Optional: parallel to rankingIds, sharing a number across tied players (e.g. teammates sharing a team win) — read by Concours scoring instead of raw array position when present. */
+  rankGroups?(entry: THistory): number[];
   scoreValue(entry: THistory, playerId: string): number;
   scoreLabel(entry: THistory, playerId: string): string;
   detailLines(entry: THistory, players: Record<string, Player>): string[];

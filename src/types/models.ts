@@ -162,20 +162,29 @@ export interface DartsX01HistoryEntry {
   contestId?: string | null;
 }
 
-export type CricketTarget = 15 | 16 | 17 | 18 | 19 | 20 | 'bull';
-export type CricketMarks = Record<CricketTarget, number>;
+/** slot1-6 carry a variable face value under Crazy Cricket (fixed at 20..15 otherwise); bull is always fixed. */
+export type CricketSlotKey = 'slot1' | 'slot2' | 'slot3' | 'slot4' | 'slot5' | 'slot6' | 'bull';
+export type CricketMarks = Record<CricketSlotKey, number>;
+export type CricketSlotValues = Record<CricketSlotKey, number>;
 
 export interface CricketTurn {
   playerId: string;
   throws: DartThrow[];
+  /** The slot -> face value mapping in effect while this turn was played (Crazy Cricket can reshuffle it afterward). */
+  slotValues: CricketSlotValues;
 }
 
 export interface CricketLiveGame {
   gameId: 'darts-cricket';
   playerIds: string[];
   cutThroat: boolean;
+  teamMode: boolean;
+  crazyMode: boolean;
+  /** playerId -> teamId. Without team mode, every player is their own team (teamOf[pid] === pid). */
+  teamOf: Record<string, string>;
   turns: CricketTurn[];
   currentThrows: DartThrow[];
+  currentSlotValues: CricketSlotValues;
 }
 
 export interface CricketHistoryEntry {
@@ -184,11 +193,18 @@ export interface CricketHistoryEntry {
   date: string;
   playerIds: string[];
   cutThroat: boolean;
+  teamMode: boolean;
+  crazyMode: boolean;
+  teamOf: Record<string, string>;
   turns: CricketTurn[];
   finalMarks: Record<string, CricketMarks>;
   finalScores: Record<string, number>;
+  finalTeamScores: Record<string, number>;
   ranking: string[];
+  /** Parallel to ranking; equal values mean tied (e.g. teammates sharing a team win). */
+  rankGroups: number[];
   winnerId: string;
+  winnerTeamId: string;
   contestId?: string | null;
 }
 
@@ -215,6 +231,8 @@ export interface SetupState {
   variants: TrouDuCulVariants;
   newPlayerName: string;
   countsForContest: boolean;
+  /** Cricket team-mode overrides; players not listed default to alternating A/B by selection order. */
+  dartsTeams: Record<string, 'A' | 'B'>;
 }
 
 export interface KeypadModalState {

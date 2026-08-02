@@ -7,11 +7,11 @@ import { DartsThrowPad } from '../../components/DartsThrowPad';
 import { LiveScreenLayout } from '../../components/LiveScreenLayout';
 import { PressableScale } from '../../components/PressableScale';
 import { RankingRow } from '../../components/RankingRow';
-import { CRICKET_TARGETS, deriveCricketState } from '../../games/dartsCricket';
+import { CRICKET_SLOT_KEYS, deriveCricketState } from '../../games/dartsCricket';
 import { getGameOrThrow } from '../../games/registry';
 import { HomeStackNavProp } from '../../navigation/types';
 import { useAppStore } from '../../state/store';
-import { CricketLiveGame, DartThrow, Player } from '../../types/models';
+import { CricketLiveGame, CricketSlotKey, DartThrow, Player } from '../../types/models';
 import { colors, fonts, radii } from '../../theme/tokens';
 
 const LABEL_COL = 34;
@@ -31,6 +31,8 @@ function markSymbol(n: number): string {
   return '·';
 }
 
+const TEAM_COLOR: Record<string, string> = { A: colors.teal, B: colors.orange };
+
 export function DartsCricketLiveScreen() {
   const navigation = useNavigation<HomeStackNavProp<'Live'>>();
   const liveGame = useAppStore((s) => s.liveGame) as CricketLiveGame;
@@ -46,10 +48,19 @@ export function DartsCricketLiveScreen() {
 
   const game = getGameOrThrow('darts-cricket');
   const ranking = game.liveRanking(liveGame, playersMap);
-  const { marks, scores, winnerId, activePlayerId } = deriveCricketState(liveGame);
+  const { marks, individualScores, teamScores, winnerTeamId, activePlayerId } = deriveCricketState(liveGame);
   const activePlayer = activePlayerId ? playersMap[activePlayerId] : null;
   const dartsThrown = liveGame.currentThrows.length;
   const recentTurns = [...liveGame.turns].reverse().slice(0, 6);
+  const teams = liveGame.teamMode ? [...new Set(liveGame.playerIds.map((id) => liveGame.teamOf[id]))] : [];
+  const winnerNames = winnerTeamId
+    ? liveGame.playerIds.filter((id) => liveGame.teamOf[id] === winnerTeamId).map((id) => playersMap[id]?.name)
+    : [];
+
+  const enabledSegments = useMemo(() => {
+    const values = CRICKET_SLOT_KEYS.filter((k): k is CricketSlotKey => k !== 'bull').map((k) => liveGame.currentSlotValues[k]);
+    return [...values, 'bull'] as (number | 'bull')[];
+  }, [liveGame.currentSlotValues]);
 
   const finishNow = () => navigation.navigate('Recap');
   const canUndo = liveGame.currentThrows.length > 0 || liveGame.turns.length > 0;
@@ -61,16 +72,33 @@ export function DartsCricketLiveScreen() {
           <BackButton size={32} onPress={() => navigation.goBack()} />
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Cricket</Text>
-            <Text style={styles.subtitle}>{liveGame.cutThroat ? 'Cut-throat · le plus bas gagne' : 'Classique · le plus haut gagne'}</Text>
+            <Text style={styles.subtitle}>
+              {liveGame.cutThroat ? 'Cut-throat · le plus bas gagne' : 'Classique · le plus haut gagne'}
+              {liveGame.teamMode ? ' · Équipe' : ''}
+              {liveGame.crazyMode ? ' · Crazy' : ''}
+            </Text>
           </View>
         </View>
       }
-      footer={<Button label={winnerId ? 'Voir le récap 🎯' : 'Partie en cours…'} disabled={!winnerId} onPress={finishNow} size="md" />}
+      footer={<Button label={winnerTeamId ? 'Voir le récap 🎯' : 'Partie en cours…'} disabled={!winnerTeamId} onPress={finishNow} size="md" />}
     >
-      {activePlayer && !winnerId && (
+      {liveGame.teamMode && (
+        <View style={styles.teamScoresRow}>
+          {teams.map((teamId) => (
+            <View key={teamId} style={[styles.teamScoreCard, { borderColor: TEAM_COLOR[teamId] ?? colors.textMuted }]}>
+              <Text style={[styles.teamScoreLabel, { color: TEAM_COLOR[teamId] ?? colors.textMuted }]}>Équipe {teamId}</Text>
+              <Text style={styles.teamScoreValue}>{teamScores[teamId] ?? 0} pts</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {activePlayer && !winnerTeamId && (
         <View style={styles.activeCard}>
           <View style={[styles.activeDot, { backgroundColor: activePlayer.color }]} />
-          <Text style={styles.activeName}>{activePlayer.name} au tir · fléchette {dartsThrown + 1}/3</Text>
+          <Text style={styles.activeName}>
+            {activePlayer.name} au tir · fléchette {dartsThrown + 1}/3
+          </Text>
           <View style={styles.throwsRow}>
             {[0, 1, 2].map((i) => {
               const t = liveGame.currentThrows[i];
@@ -84,9 +112,11 @@ export function DartsCricketLiveScreen() {
         </View>
       )}
 
-      {winnerId && (
+      {winnerTeamId && (
         <View style={styles.winnerCard}>
-          <Text style={styles.winnerText}>🎯 {playersMap[winnerId]?.name} a fermé toutes les cibles et gagne !</Text>
+          <Text style={styles.winnerText}>
+            🎯 {liveGame.teamMode ? `Équipe ${winnerTeamId} (${winnerNames.join(' & ')})` : winnerNames[0]} a fermé toutes les cibles et gagne !
+          </Text>
         </View>
       )}
 
@@ -104,13 +134,13 @@ export function DartsCricketLiveScreen() {
             ))}
           </View>
 
-          {CRICKET_TARGETS.map((target) => (
-            <View key={target} style={styles.row}>
+          {CRICKET_SLOT_KEYS.map((slot) => (
+            <View key={slot} style={styles.row}>
               <View style={{ width: LABEL_COL, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={styles.rowLabel}>{target === 'bull' ? '⊙' : target}</Text>
+                <Text style={styles.rowLabel}>{slot === 'bull' ? '⊙' : liveGame.currentSlotValues[slot]}</Text>
               </View>
               {liveGame.playerIds.map((pid) => {
-                const n = marks[pid][target];
+                const n = marks[pid][slot];
                 return (
                   <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 6 }}>
                     <Text style={[styles.mark, { color: n >= 3 ? colors.teal : n > 0 ? colors.amber : colors.textMutedDark }]}>{markSymbol(n)}</Text>
@@ -126,14 +156,14 @@ export function DartsCricketLiveScreen() {
             </View>
             {liveGame.playerIds.map((pid) => (
               <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={styles.scoreValue}>{scores[pid]}</Text>
+                <Text style={styles.scoreValue}>{individualScores[pid]}</Text>
               </View>
             ))}
           </View>
         </View>
       </ScrollView>
 
-      {!winnerId && <DartsThrowPad onThrow={dartsCricketAddThrow} enabledSegments={[20, 19, 18, 17, 16, 15, 'bull']} />}
+      {!winnerTeamId && <DartsThrowPad onThrow={dartsCricketAddThrow} enabledSegments={enabledSegments} />}
 
       <PressableScale scaleTo={0.96} onPress={dartsCricketUndoThrow} disabled={!canUndo} style={[styles.undoBtn, !canUndo && { opacity: 0.4 }]}>
         <Text style={styles.undoLabel}>⌫ Annuler la dernière fléchette</Text>
@@ -141,16 +171,19 @@ export function DartsCricketLiveScreen() {
 
       <Text style={styles.sectionTitle}>Classement en direct</Text>
       <View style={{ gap: 6, marginBottom: 20 }}>
-        {ranking.map((r, idx) => (
-          <RankingRow
-            key={r.id}
-            position={idx + 1}
-            name={playersMap[r.id]?.name ?? '?'}
-            color={playersMap[r.id]?.color ?? '#888'}
-            scoreLabel={`${r.total} pts`}
-            highlight={r.id === winnerId || (idx === 0 && !winnerId)}
-          />
-        ))}
+        {ranking.map((r, idx) => {
+          const isWinner = winnerTeamId ? liveGame.teamOf[r.id] === winnerTeamId : false;
+          return (
+            <RankingRow
+              key={r.id}
+              position={idx + 1}
+              name={liveGame.teamMode ? `${playersMap[r.id]?.name ?? '?'} (Équipe ${liveGame.teamOf[r.id]})` : playersMap[r.id]?.name ?? '?'}
+              color={playersMap[r.id]?.color ?? '#888'}
+              scoreLabel={`${r.total} pts`}
+              highlight={isWinner || (idx === 0 && !winnerTeamId)}
+            />
+          );
+        })}
       </View>
 
       {recentTurns.length > 0 && (
@@ -175,6 +208,10 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   title: { fontFamily: fonts.heading, fontSize: 17, fontWeight: '600', color: colors.textPrimary },
   subtitle: { fontSize: 12, color: colors.textMuted },
+  teamScoresRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  teamScoreCard: { flex: 1, borderRadius: radii.lg, borderWidth: 1.5, padding: 12, alignItems: 'center', backgroundColor: colors.surface },
+  teamScoreLabel: { fontSize: 11, fontWeight: '700', fontFamily: fonts.bodyBold },
+  teamScoreValue: { fontFamily: fonts.headingBold, fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 2 },
   activeCard: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: 16, alignItems: 'center', marginBottom: 14 },
   activeDot: { width: 12, height: 12, borderRadius: 6, marginBottom: 6 },
   activeName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, fontFamily: fonts.bodySemiBold },

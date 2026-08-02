@@ -7,6 +7,7 @@ import { Chip } from '../components/Chip';
 import { PressableScale } from '../components/PressableScale';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionLabel } from '../components/SectionLabel';
+import { resolveTeamId } from '../games/dartsCricket';
 import { GAMES } from '../games/registry';
 import { HomeStackNavProp } from '../navigation/types';
 import { useAppStore } from '../state/store';
@@ -22,6 +23,7 @@ export function SetupScreen() {
   const addPlayer = useAppStore((s) => s.addSetupPlayer);
   const toggleVariant = useAppStore((s) => s.toggleSetupVariant);
   const selectDartsStartScore = useAppStore((s) => s.selectSetupDartsStartScore);
+  const toggleSetupPlayerTeam = useAppStore((s) => s.toggleSetupPlayerTeam);
   const toggleCountsForContest = useAppStore((s) => s.toggleSetupCountsForContest);
   const startGame = useAppStore((s) => s.startGame);
   const contests = useAppStore((s) => s.contests);
@@ -156,7 +158,7 @@ export function SetupScreen() {
 
           {isCricket && (
             <>
-              <SectionLabel>3. Variante</SectionLabel>
+              <SectionLabel>3. Variantes</SectionLabel>
               <View style={styles.chipsWrap}>
                 <Chip
                   label="Cut-throat (score le plus bas gagne)"
@@ -165,7 +167,46 @@ export function SetupScreen() {
                   activeFg={colors.white}
                   onPress={() => toggleVariant('cutThroat')}
                 />
+                <Chip
+                  label="Mode Équipe"
+                  active={!!setup.variants.teamMode}
+                  activeBg={colors.teal}
+                  activeFg={colors.bg}
+                  onPress={() => toggleVariant('teamMode')}
+                />
+                <Chip
+                  label="Crazy Cricket"
+                  active={!!setup.variants.crazyMode}
+                  activeBg={colors.orange}
+                  activeFg={colors.bg}
+                  onPress={() => toggleVariant('crazyMode')}
+                />
               </View>
+
+              {!!setup.variants.teamMode && setup.selectedPlayerIds.length > 0 && (
+                <>
+                  <SectionLabel>Équipes (touche pour changer)</SectionLabel>
+                  <View style={{ gap: 8, marginBottom: 20 }}>
+                    {setup.selectedPlayerIds.map((pid, idx) => {
+                      const player = players.find((p) => p.id === pid);
+                      const team = resolveTeamId(pid, idx, setup.dartsTeams);
+                      const teamColor = team === 'A' ? colors.teal : colors.orange;
+                      return (
+                        <PressableScale
+                          key={pid}
+                          scaleTo={0.98}
+                          onPress={() => toggleSetupPlayerTeam(pid, idx)}
+                          style={[styles.teamRow, { borderColor: teamColor }]}
+                        >
+                          <View style={[styles.dot, { backgroundColor: player?.color }]} />
+                          <Text style={styles.teamPlayerName}>{player?.name}</Text>
+                          <Text style={[styles.teamBadge, { color: teamColor }]}>Équipe {team}</Text>
+                        </PressableScale>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
             </>
           )}
 
@@ -222,5 +263,18 @@ const styles = StyleSheet.create({
   },
   addBtn: { borderRadius: radii.sm, paddingHorizontal: 16, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: colors.bg, fontWeight: '700', fontSize: 18 },
+  teamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  teamPlayerName: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary, fontFamily: fonts.bodySemiBold },
+  teamBadge: { fontSize: 12, fontWeight: '700', fontFamily: fonts.bodyBold },
   hint: { fontSize: 12, color: colors.textMutedDark, textAlign: 'center', marginBottom: 10 },
 });
