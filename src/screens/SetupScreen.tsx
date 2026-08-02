@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
@@ -9,9 +9,32 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionLabel } from '../components/SectionLabel';
 import { resolveTeamId } from '../games/dartsCricket';
 import { GAMES } from '../games/registry';
+import type { GameDef } from '../games/types';
 import { HomeStackNavProp } from '../navigation/types';
 import { useAppStore } from '../state/store';
 import { colors, fonts, radii } from '../theme/tokens';
+
+const DART_GAME_IDS = ['darts-x01', 'darts-cricket', 'darts-atc', 'darts-shanghai'];
+
+function renderGameTile(g: GameDef, selected: boolean, onPress: () => void) {
+  return (
+    <PressableScale
+      key={g.id}
+      scaleTo={0.98}
+      onPress={onPress}
+      style={[styles.gameCard, { backgroundColor: selected ? colors.surface : colors.surfaceAlt, borderColor: selected ? g.color : 'transparent' }]}
+    >
+      <View style={[styles.gameBadge, { backgroundColor: g.color }]}>
+        <Text style={styles.gameBadgeText}>{g.badge}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.gameName}>{g.name}</Text>
+        <Text style={styles.gameTagline}>{g.tagline}</Text>
+      </View>
+      {selected && <Text style={{ fontSize: 20 }}>✅</Text>}
+    </PressableScale>
+  );
+}
 
 export function SetupScreen() {
   const navigation = useNavigation<HomeStackNavProp<'Setup'>>();
@@ -29,6 +52,12 @@ export function SetupScreen() {
   const startGame = useAppStore((s) => s.startGame);
   const contests = useAppStore((s) => s.contests);
   const activeContest = contests.find((c) => !c.endedAt) ?? null;
+
+  const [dartsOpen, setDartsOpen] = useState(false);
+  const isDartsSelected = !!setup.gameId && DART_GAME_IDS.includes(setup.gameId);
+  const showDartsModes = dartsOpen || isDartsSelected;
+  const nonDartGames = GAMES.filter((g) => !DART_GAME_IDS.includes(g.id));
+  const dartGames = GAMES.filter((g) => DART_GAME_IDS.includes(g.id));
 
   const gameChosen = !!setup.gameId;
   const isTdc = setup.gameId === 'trou-du-cul';
@@ -50,31 +79,45 @@ export function SetupScreen() {
       </View>
 
       <SectionLabel>1. Choisis le jeu</SectionLabel>
-      <View style={{ gap: 10, marginBottom: 24 }}>
-        {GAMES.map((g) => {
-          const selected = g.id === setup.gameId;
-          return (
-            <PressableScale
-              key={g.id}
-              scaleTo={0.98}
-              onPress={() => selectSetupGame(g.id)}
-              style={[
-                styles.gameCard,
-                { backgroundColor: selected ? colors.surface : colors.surfaceAlt, borderColor: selected ? g.color : 'transparent' },
-              ]}
-            >
-              <View style={[styles.gameBadge, { backgroundColor: g.color }]}>
-                <Text style={styles.gameBadgeText}>{g.badge}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.gameName}>{g.name}</Text>
-                <Text style={styles.gameTagline}>{g.tagline}</Text>
-              </View>
-              {selected && <Text style={{ fontSize: 20 }}>✅</Text>}
-            </PressableScale>
-          );
-        })}
+      <View style={{ gap: 10, marginBottom: showDartsModes ? 10 : 24 }}>
+        {nonDartGames.map((g) =>
+          renderGameTile(g, g.id === setup.gameId, () => {
+            setDartsOpen(false);
+            selectSetupGame(g.id);
+          }),
+        )}
+        <PressableScale
+          scaleTo={0.98}
+          onPress={() => setDartsOpen(true)}
+          style={[
+            styles.gameCard,
+            { backgroundColor: showDartsModes ? colors.surface : colors.surfaceAlt, borderColor: showDartsModes ? colors.red : 'transparent' },
+          ]}
+        >
+          <View style={[styles.gameBadge, { backgroundColor: colors.red }]}>
+            <Text style={styles.gameBadgeText}>🎯</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.gameName}>Fléchettes</Text>
+            <Text style={styles.gameTagline}>301/501 · Cricket · Around the Clock · Shanghai</Text>
+          </View>
+          {isDartsSelected && <Text style={{ fontSize: 20 }}>✅</Text>}
+        </PressableScale>
       </View>
+
+      {showDartsModes && (
+        <>
+          <SectionLabel>Choisis le mode</SectionLabel>
+          <View style={{ gap: 10, marginBottom: 24, marginLeft: 16 }}>
+            {dartGames.map((g) =>
+              renderGameTile(g, g.id === setup.gameId, () => {
+                setDartsOpen(true);
+                selectSetupGame(g.id);
+              }),
+            )}
+          </View>
+        </>
+      )}
 
       {gameChosen && (
         <>
