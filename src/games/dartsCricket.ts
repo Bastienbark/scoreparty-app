@@ -41,8 +41,9 @@ export function buildTeamOf(playerIds: string[], overrides: Record<string, 'A' |
 
 /**
  * Rerolls every not-yet-frozen slot (Crazy Cricket only) to a new random face
- * value from 5-20, excluding values already active elsewhere. A slot freezes
- * — stops being rerolled — the instant any single player has closed it,
+ * value from 5-20: never its own previous value, and never a value already
+ * active on another slot (frozen or not) at the same time. A slot freezes —
+ * stops being rerolled — the instant any single player has closed it,
  * regardless of team. Marks stay attached to the slot itself, so a slot's
  * history of marks survives its value changing.
  */
@@ -54,7 +55,7 @@ export function rerollSlotValues(marks: Record<string, CricketMarks>, playerIds:
 
   REROLLABLE_SLOTS.filter((slot) => !isFrozen(slot)).forEach((slot) => {
     const pool: number[] = [];
-    for (let v = CRAZY_POOL_MIN; v <= CRAZY_POOL_MAX; v++) if (!taken.has(v)) pool.push(v);
+    for (let v = CRAZY_POOL_MIN; v <= CRAZY_POOL_MAX; v++) if (!taken.has(v) && v !== current[slot]) pool.push(v);
     const value = pool.length ? pool[Math.floor(rng() * pool.length)] : current[slot];
     next[slot] = value;
     taken.add(value);
