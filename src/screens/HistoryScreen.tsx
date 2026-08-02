@@ -110,7 +110,7 @@ export function HistoryScreen() {
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.entryName}>{game.name}</Text>
                     <Text style={styles.entryMeta}>
-                      {fmtDate(entry.date)} · {entry.playerIds.length} joueurs
+                      {fmtDate(entry.date)} · {entry.playerIds.length} joueur{entry.playerIds.length > 1 ? 's' : ''}
                     </Text>
                   </View>
                   <Text style={styles.entryWinner}>👑 {winner.name}</Text>

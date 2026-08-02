@@ -21,6 +21,7 @@ export function SetupScreen() {
   const setNewPlayerName = useAppStore((s) => s.setSetupNewPlayerName);
   const addPlayer = useAppStore((s) => s.addSetupPlayer);
   const toggleVariant = useAppStore((s) => s.toggleSetupVariant);
+  const selectDartsStartScore = useAppStore((s) => s.selectSetupDartsStartScore);
   const toggleCountsForContest = useAppStore((s) => s.toggleSetupCountsForContest);
   const startGame = useAppStore((s) => s.startGame);
   const contests = useAppStore((s) => s.contests);
@@ -28,6 +29,7 @@ export function SetupScreen() {
 
   const gameChosen = !!setup.gameId;
   const isTdc = setup.gameId === 'trou-du-cul';
+  const isDartsX01 = setup.gameId === 'darts-x01';
   const selectedGame = GAMES.find((g) => g.id === setup.gameId);
   const minPlayers = selectedGame?.minPlayers ?? 2;
   const maxPlayers = selectedGame?.maxPlayers ?? 7;
@@ -113,6 +115,40 @@ export function SetupScreen() {
                     onPress={() => toggleVariant(v.key)}
                   />
                 ))}
+              </View>
+            </>
+          )}
+
+          {isDartsX01 && (
+            <>
+              <SectionLabel>3. Score de départ</SectionLabel>
+              <View style={styles.chipsWrap}>
+                {[301, 501, 701].map((score) => (
+                  <Chip
+                    key={score}
+                    label={String(score)}
+                    active={!!setup.variants[score]}
+                    activeBg={colors.red}
+                    activeFg={colors.white}
+                    onPress={() => selectDartsStartScore(score)}
+                  />
+                ))}
+              </View>
+              <View style={styles.chipsWrap}>
+                <Chip
+                  label="Double out"
+                  active={setup.variants.doubleOut !== false}
+                  activeBg={colors.orange}
+                  activeFg={colors.bg}
+                  onPress={() => toggleVariant('doubleOut')}
+                />
+                <Chip
+                  label="Double in"
+                  active={!!setup.variants.doubleIn}
+                  activeBg={colors.orange}
+                  activeFg={colors.bg}
+                  onPress={() => toggleVariant('doubleIn')}
+                />
               </View>
             </>
           )}

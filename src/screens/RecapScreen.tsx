@@ -67,7 +67,7 @@ export function RecapScreen() {
             <Text style={styles.medal}>{MEDALS[idx] ?? `#${idx + 1}`}</Text>
             <View style={[styles.dot, { backgroundColor: playersMap[r.id]?.color }]} />
             <Text style={styles.name}>{playersMap[r.id]?.name}</Text>
-            <Text style={styles.score}>{r.total} pts</Text>
+            <Text style={styles.score}>{game.liveScoreLabel ? game.liveScoreLabel(r.total, idx === 0) : `${r.total} pts`}</Text>
           </View>
         ))}
       </View>

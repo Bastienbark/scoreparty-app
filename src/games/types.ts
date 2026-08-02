@@ -31,6 +31,8 @@ export interface GameDef<TLive extends LiveGame = LiveGame, THistory extends His
 
   /** Live ranking (best first) with a numeric total, used while a game is in progress. */
   liveRanking(live: TLive, players: Record<string, Player>): { id: string; total: number }[];
+  /** Optional: overrides the default "{total} pts" row label on the live Recap screen (e.g. darts: "Fini !" / "45 restants"). */
+  liveScoreLabel?(total: number, isWinner: boolean): string;
 
   buildHistoryEntry(live: TLive, id: string, date: string): THistory;
 

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
+import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
@@ -121,6 +122,7 @@ interface AppState {
   setSetupNewPlayerName: (v: string) => void;
   addSetupPlayer: () => void;
   toggleSetupVariant: (key: string) => void;
+  selectSetupDartsStartScore: (score: number) => void;
   toggleSetupCountsForContest: () => void;
   startGame: () => boolean;
 
@@ -141,6 +143,9 @@ interface AppState {
   tdcTapPlayer: (pid: string) => void;
   tdcResetRound: () => void;
   tdcNextRound: () => void;
+
+  dartsAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsUndoThrow: () => void;
 
   saveGame: () => void;
   resetLiveGame: () => void;
@@ -356,7 +361,12 @@ export const useAppStore = create<AppState>((set, get) => {
       setup: {
         ...s.setup,
         gameId,
-        variants: gameId === 'trou-du-cul' ? { revolution: false, bombes: false, putsch: false, suites: false } : ({} as TrouDuCulVariants),
+        variants:
+          gameId === 'trou-du-cul'
+            ? { revolution: false, bombes: false, putsch: false, suites: false }
+            : gameId === 'darts-x01'
+              ? { '501': true, doubleOut: true, doubleIn: false }
+              : ({} as TrouDuCulVariants),
       },
     })),
 
@@ -392,6 +402,9 @@ export const useAppStore = create<AppState>((set, get) => {
 
   toggleSetupVariant: (key) =>
     set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, [key]: !s.setup.variants[key] } } })),
+
+  selectSetupDartsStartScore: (score) =>
+    set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, '301': false, '501': false, '701': false, [score]: true } } })),
 
   toggleSetupCountsForContest: () => set((s) => ({ setup: { ...s.setup, countsForContest: !s.setup.countsForContest } })),
 
@@ -510,6 +523,38 @@ export const useAppStore = create<AppState>((set, get) => {
       const live = s.liveGame;
       if (!live || live.gameId !== 'trou-du-cul' || live.currentRound >= live.rounds.length) return {};
       return { liveGame: { ...live, currentRound: live.currentRound + 1 } };
+    }),
+
+  dartsAddThrow: (segment, multiplier) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'darts-x01') return;
+    if (live.currentThrows.length >= 3) return;
+    const { winnerId, activePlayerId, scores, opened } = deriveX01State(live);
+    if (winnerId || !activePlayerId) return;
+
+    const points = dartPoints(segment, multiplier);
+    const newThrows = [...live.currentThrows, { segment, multiplier, points }];
+    const remainingBefore = scores[activePlayerId];
+    const evalResult = evaluateX01Turn(remainingBefore, opened[activePlayerId], live.doubleOut, live.doubleIn, newThrows);
+
+    if (evalResult.isBust || evalResult.finished || newThrows.length === 3) {
+      const turn = { playerId: activePlayerId, throws: newThrows, turnScore: evalResult.turnScore, isBust: evalResult.isBust };
+      set({ liveGame: { ...live, turns: [...live.turns, turn], currentThrows: [] } });
+    } else {
+      set({ liveGame: { ...live, currentThrows: newThrows } });
+    }
+  },
+
+  dartsUndoThrow: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'darts-x01') return {};
+      if (live.currentThrows.length > 0) {
+        return { liveGame: { ...live, currentThrows: live.currentThrows.slice(0, -1) } };
+      }
+      if (live.turns.length === 0) return {};
+      const lastTurn = live.turns[live.turns.length - 1];
+      return { liveGame: { ...live, turns: live.turns.slice(0, -1), currentThrows: lastTurn.throws.slice(0, -1) } };
     }),
 
   saveGame: () => {

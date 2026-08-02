@@ -123,8 +123,53 @@ export interface Trek12HistoryEntry {
   contestId?: string | null;
 }
 
-export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame | Trek12LiveGame;
-export type HistoryEntry = CinqRoisHistoryEntry | TrouDuCulHistoryEntry | SkyjoHistoryEntry | QwirkleHistoryEntry | Trek12HistoryEntry;
+export interface DartThrow {
+  segment: number | 'bull';
+  multiplier: 1 | 2 | 3;
+  points: number;
+}
+
+export interface DartTurn {
+  playerId: string;
+  throws: DartThrow[];
+  turnScore: number;
+  isBust: boolean;
+}
+
+export interface DartsX01LiveGame {
+  gameId: 'darts-x01';
+  playerIds: string[];
+  startScore: number;
+  doubleOut: boolean;
+  doubleIn: boolean;
+  turns: DartTurn[];
+  /** Throws entered so far for the turn in progress (0-3), not yet committed. */
+  currentThrows: DartThrow[];
+}
+
+export interface DartsX01HistoryEntry {
+  id: string;
+  gameId: 'darts-x01';
+  date: string;
+  playerIds: string[];
+  startScore: number;
+  doubleOut: boolean;
+  doubleIn: boolean;
+  turns: DartTurn[];
+  finalScores: Record<string, number>;
+  ranking: string[];
+  winnerId: string;
+  contestId?: string | null;
+}
+
+export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame | Trek12LiveGame | DartsX01LiveGame;
+export type HistoryEntry =
+  | CinqRoisHistoryEntry
+  | TrouDuCulHistoryEntry
+  | SkyjoHistoryEntry
+  | QwirkleHistoryEntry
+  | Trek12HistoryEntry
+  | DartsX01HistoryEntry;
 
 export interface SetupState {
   gameId: string | null;
