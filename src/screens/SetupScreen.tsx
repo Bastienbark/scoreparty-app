@@ -23,6 +23,7 @@ export function SetupScreen() {
   const addPlayer = useAppStore((s) => s.addSetupPlayer);
   const toggleVariant = useAppStore((s) => s.toggleSetupVariant);
   const selectDartsStartScore = useAppStore((s) => s.selectSetupDartsStartScore);
+  const selectAtcHitType = useAppStore((s) => s.selectSetupAtcHitType);
   const toggleSetupPlayerTeam = useAppStore((s) => s.toggleSetupPlayerTeam);
   const toggleCountsForContest = useAppStore((s) => s.toggleSetupCountsForContest);
   const startGame = useAppStore((s) => s.startGame);
@@ -33,6 +34,8 @@ export function SetupScreen() {
   const isTdc = setup.gameId === 'trou-du-cul';
   const isDartsX01 = setup.gameId === 'darts-x01';
   const isCricket = setup.gameId === 'darts-cricket';
+  const isAtc = setup.gameId === 'darts-atc';
+  const isShanghai = setup.gameId === 'darts-shanghai';
   const selectedGame = GAMES.find((g) => g.id === setup.gameId);
   const minPlayers = selectedGame?.minPlayers ?? 2;
   const maxPlayers = selectedGame?.maxPlayers ?? 7;
@@ -207,6 +210,54 @@ export function SetupScreen() {
                   </View>
                 </>
               )}
+            </>
+          )}
+
+          {isAtc && (
+            <>
+              <SectionLabel>3. Type de touche requis</SectionLabel>
+              <View style={styles.chipsWrap}>
+                <Chip
+                  label="Simple/double/triple"
+                  active={!setup.variants.hitSingle && !setup.variants.hitDouble}
+                  activeBg={colors.cyan}
+                  activeFg={colors.bg}
+                  onPress={() => selectAtcHitType('any')}
+                />
+                <Chip label="Simples uniquement" active={!!setup.variants.hitSingle} activeBg={colors.cyan} activeFg={colors.bg} onPress={() => selectAtcHitType('single')} />
+                <Chip label="Doubles uniquement" active={!!setup.variants.hitDouble} activeBg={colors.cyan} activeFg={colors.bg} onPress={() => selectAtcHitType('double')} />
+              </View>
+              <View style={styles.chipsWrap}>
+                <Chip
+                  label="+ centre pour finir"
+                  active={!!setup.variants.includeBull}
+                  activeBg={colors.orange}
+                  activeFg={colors.bg}
+                  onPress={() => toggleVariant('includeBull')}
+                />
+              </View>
+            </>
+          )}
+
+          {isShanghai && (
+            <>
+              <SectionLabel>3. Nombre de rounds</SectionLabel>
+              <View style={styles.chipsWrap}>
+                <Chip
+                  label="7 rounds"
+                  active={!setup.variants['20']}
+                  activeBg={colors.teal}
+                  activeFg={colors.bg}
+                  onPress={() => setup.variants['20'] && toggleVariant('20')}
+                />
+                <Chip
+                  label="20 rounds"
+                  active={!!setup.variants['20']}
+                  activeBg={colors.teal}
+                  activeFg={colors.bg}
+                  onPress={() => !setup.variants['20'] && toggleVariant('20')}
+                />
+              </View>
             </>
           )}
 

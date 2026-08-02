@@ -3,6 +3,8 @@ import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
 import { buildTeamOf, deriveCricketState, previewCricketThrow, rerollSlotValues, resolveTeamId } from '../games/dartsCricket';
+import { deriveAtcState } from '../games/dartsAroundTheClock';
+import { deriveShanghaiState } from '../games/dartsShanghai';
 import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
@@ -124,6 +126,7 @@ interface AppState {
   addSetupPlayer: () => void;
   toggleSetupVariant: (key: string) => void;
   selectSetupDartsStartScore: (score: number) => void;
+  selectSetupAtcHitType: (type: 'any' | 'single' | 'double') => void;
   toggleSetupPlayerTeam: (pid: string, idx: number) => void;
   toggleSetupCountsForContest: () => void;
   startGame: () => boolean;
@@ -151,6 +154,12 @@ interface AppState {
 
   dartsCricketAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
   dartsCricketUndoThrow: () => void;
+
+  dartsAtcAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsAtcUndoThrow: () => void;
+
+  dartsShanghaiAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsShanghaiUndoThrow: () => void;
 
   saveGame: () => void;
   resetLiveGame: () => void;
@@ -373,7 +382,11 @@ export const useAppStore = create<AppState>((set, get) => {
               ? { '501': true, doubleOut: true, doubleIn: false }
               : gameId === 'darts-cricket'
                 ? { cutThroat: false }
-                : ({} as TrouDuCulVariants),
+                : gameId === 'darts-atc'
+                  ? { hitSingle: false, hitDouble: false, includeBull: false }
+                  : gameId === 'darts-shanghai'
+                    ? { '20': false }
+                    : ({} as TrouDuCulVariants),
       },
     })),
 
@@ -412,6 +425,9 @@ export const useAppStore = create<AppState>((set, get) => {
 
   selectSetupDartsStartScore: (score) =>
     set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, '301': false, '501': false, '701': false, [score]: true } } })),
+
+  selectSetupAtcHitType: (type) =>
+    set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, hitSingle: type === 'single', hitDouble: type === 'double' } } })),
 
   toggleSetupPlayerTeam: (pid, idx) =>
     set((s) => {
@@ -617,6 +633,67 @@ export const useAppStore = create<AppState>((set, get) => {
           currentSlotValues: lastTurn.slotValues,
         },
       };
+    }),
+
+  dartsAtcAddThrow: (segment, multiplier) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'darts-atc') return;
+    if (live.currentThrows.length >= 3) return;
+    const { winnerId, activePlayerId } = deriveAtcState(live);
+    if (winnerId || !activePlayerId) return;
+
+    const points = dartPoints(segment, multiplier);
+    const newThrows = [...live.currentThrows, { segment, multiplier, points }];
+    const { winnerId: previewWinner } = deriveAtcState({ ...live, currentThrows: newThrows });
+
+    if (previewWinner || newThrows.length === 3) {
+      const turn = { playerId: activePlayerId, throws: newThrows };
+      set({ liveGame: { ...live, turns: [...live.turns, turn], currentThrows: [] } });
+    } else {
+      set({ liveGame: { ...live, currentThrows: newThrows } });
+    }
+  },
+
+  dartsAtcUndoThrow: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'darts-atc') return {};
+      if (live.currentThrows.length > 0) {
+        return { liveGame: { ...live, currentThrows: live.currentThrows.slice(0, -1) } };
+      }
+      if (live.turns.length === 0) return {};
+      const lastTurn = live.turns[live.turns.length - 1];
+      return { liveGame: { ...live, turns: live.turns.slice(0, -1), currentThrows: lastTurn.throws.slice(0, -1) } };
+    }),
+
+  dartsShanghaiAddThrow: (segment, multiplier) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'darts-shanghai') return;
+    if (live.currentThrows.length >= 3) return;
+    const { winnerIds, activePlayerId, round } = deriveShanghaiState(live);
+    if (winnerIds || !activePlayerId) return;
+
+    const points = dartPoints(segment, multiplier);
+    const newThrows = [...live.currentThrows, { segment, multiplier, points }];
+
+    if (newThrows.length === 3) {
+      const turn = { playerId: activePlayerId, round, throws: newThrows };
+      set({ liveGame: { ...live, turns: [...live.turns, turn], currentThrows: [] } });
+    } else {
+      set({ liveGame: { ...live, currentThrows: newThrows } });
+    }
+  },
+
+  dartsShanghaiUndoThrow: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'darts-shanghai') return {};
+      if (live.currentThrows.length > 0) {
+        return { liveGame: { ...live, currentThrows: live.currentThrows.slice(0, -1) } };
+      }
+      if (live.turns.length === 0) return {};
+      const lastTurn = live.turns[live.turns.length - 1];
+      return { liveGame: { ...live, turns: live.turns.slice(0, -1), currentThrows: lastTurn.throws.slice(0, -1) } };
     }),
 
   saveGame: () => {

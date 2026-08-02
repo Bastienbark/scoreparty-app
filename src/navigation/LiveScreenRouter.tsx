@@ -1,7 +1,9 @@
 import React from 'react';
 import { useAppStore } from '../state/store';
 import { CinqRoisLiveScreen } from '../screens/live/CinqRoisLiveScreen';
+import { DartsAtcLiveScreen } from '../screens/live/DartsAtcLiveScreen';
 import { DartsCricketLiveScreen } from '../screens/live/DartsCricketLiveScreen';
+import { DartsShanghaiLiveScreen } from '../screens/live/DartsShanghaiLiveScreen';
 import { DartsX01LiveScreen } from '../screens/live/DartsX01LiveScreen';
 import { QwirkleLiveScreen } from '../screens/live/QwirkleLiveScreen';
 import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
@@ -20,6 +22,8 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   'trek-12': Trek12LiveScreen,
   'darts-x01': DartsX01LiveScreen,
   'darts-cricket': DartsCricketLiveScreen,
+  'darts-atc': DartsAtcLiveScreen,
+  'darts-shanghai': DartsShanghaiLiveScreen,
 };
 
 export function LiveScreenRouter() {

@@ -208,6 +208,66 @@ export interface CricketHistoryEntry {
   contestId?: string | null;
 }
 
+export type AtcHitType = 'any' | 'single' | 'double';
+
+export interface AtcTurn {
+  playerId: string;
+  throws: DartThrow[];
+}
+
+export interface AtcLiveGame {
+  gameId: 'darts-atc';
+  playerIds: string[];
+  hitType: AtcHitType;
+  includeBull: boolean;
+  turns: AtcTurn[];
+  currentThrows: DartThrow[];
+}
+
+export interface AtcHistoryEntry {
+  id: string;
+  gameId: 'darts-atc';
+  date: string;
+  playerIds: string[];
+  hitType: AtcHitType;
+  includeBull: boolean;
+  turns: AtcTurn[];
+  finalProgress: Record<string, number>;
+  ranking: string[];
+  winnerId: string;
+  contestId?: string | null;
+}
+
+export interface ShanghaiTurn {
+  playerId: string;
+  round: number;
+  throws: DartThrow[];
+}
+
+export interface ShanghaiLiveGame {
+  gameId: 'darts-shanghai';
+  playerIds: string[];
+  totalRounds: number;
+  turns: ShanghaiTurn[];
+  currentThrows: DartThrow[];
+}
+
+export interface ShanghaiHistoryEntry {
+  id: string;
+  gameId: 'darts-shanghai';
+  date: string;
+  playerIds: string[];
+  totalRounds: number;
+  turns: ShanghaiTurn[];
+  finalScores: Record<string, number>;
+  /** Set when won by an instant Shanghai (single + double + triple of the round's number in one turn); null for a normal high-score finish. */
+  shanghaiWinnerId: string | null;
+  ranking: string[];
+  rankGroups: number[];
+  winnerId: string;
+  contestId?: string | null;
+}
+
 export type LiveGame =
   | CinqRoisLiveGame
   | TrouDuCulLiveGame
@@ -215,7 +275,9 @@ export type LiveGame =
   | QwirkleLiveGame
   | Trek12LiveGame
   | DartsX01LiveGame
-  | CricketLiveGame;
+  | CricketLiveGame
+  | AtcLiveGame
+  | ShanghaiLiveGame;
 export type HistoryEntry =
   | CinqRoisHistoryEntry
   | TrouDuCulHistoryEntry
@@ -223,7 +285,9 @@ export type HistoryEntry =
   | QwirkleHistoryEntry
   | Trek12HistoryEntry
   | DartsX01HistoryEntry
-  | CricketHistoryEntry;
+  | CricketHistoryEntry
+  | AtcHistoryEntry
+  | ShanghaiHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;
