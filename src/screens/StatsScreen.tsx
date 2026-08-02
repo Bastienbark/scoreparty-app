@@ -65,6 +65,8 @@ export function StatsScreen() {
   const selectStatsPlayer = useAppStore((s) => s.selectStatsPlayer);
   const toggleStatsCompare = useAppStore((s) => s.toggleStatsCompare);
   const setStatsCompareGameId = useAppStore((s) => s.setStatsCompareGameId);
+  const statsCompareContestId = useAppStore((s) => s.statsCompareContestId);
+  const setStatsCompareContestId = useAppStore((s) => s.setStatsCompareContestId);
   const toggleStatsHeadToHead = useAppStore((s) => s.toggleStatsHeadToHead);
   const playerById = useAppStore((s) => s.playerById);
 
@@ -80,6 +82,7 @@ export function StatsScreen() {
   const compare = useMemo(() => {
     if (statsCompareIds.length < 2) return null;
     const matchesGameFilter = (h: HistoryEntry) => !statsCompareGameId || h.gameId === statsCompareGameId;
+    const matchesContestFilter = (h: HistoryEntry) => !statsCompareContestId || h.contestId === statsCompareContestId;
     // "Together": every compared player is in the game. In head-to-head mode this
     // tightens to an exact match — the game had these players and no one else.
     const togetherMatch = (h: HistoryEntry) => {
@@ -89,12 +92,13 @@ export function StatsScreen() {
     // A player's own games, restricted to head-to-head confrontations with the
     // other compared players when the toggle is on (otherwise unrestricted, as
     // before — this stat isn't inherently a "together" stat outside that mode).
-    const eligibleGames = (pid: string) => history.filter((h) => h.playerIds.includes(pid) && matchesGameFilter(h) && (!statsHeadToHeadOnly || togetherMatch(h)));
+    const eligibleGames = (pid: string) =>
+      history.filter((h) => h.playerIds.includes(pid) && matchesGameFilter(h) && matchesContestFilter(h) && (!statsHeadToHeadOnly || togetherMatch(h)));
 
     const rowsMeta: { label: string; calc: (pid: string) => string }[] = [
       {
         label: 'Parties jouées ensemble',
-        calc: () => String(history.filter((h) => matchesGameFilter(h) && togetherMatch(h)).length),
+        calc: () => String(history.filter((h) => matchesGameFilter(h) && matchesContestFilter(h) && togetherMatch(h)).length),
       },
       {
         label: 'Victoires',
@@ -134,7 +138,7 @@ export function StatsScreen() {
       players: statsCompareIds.map((id) => playerById(id)),
       rows: rowsMeta.map((rm) => ({ label: rm.label, values: statsCompareIds.map((id) => rm.calc(id)) })),
     };
-  }, [statsCompareIds, statsCompareGameId, statsHeadToHeadOnly, history, playerById]);
+  }, [statsCompareIds, statsCompareGameId, statsCompareContestId, statsHeadToHeadOnly, history, playerById]);
 
   return (
     <ScreenContainer>
@@ -248,6 +252,25 @@ export function StatsScreen() {
               />
             ))}
           </View>
+
+          {contests.length > 0 && (
+            <>
+              <Text style={styles.hint}>Concours</Text>
+              <View style={styles.chipsWrap}>
+                <Chip label="Tous" active={!statsCompareContestId} activeBg={colors.teal} activeFg={colors.bg} onPress={() => setStatsCompareContestId(null)} />
+                {contests.map((c) => (
+                  <Chip
+                    key={c.id}
+                    label={`🏆 ${c.name}`}
+                    active={statsCompareContestId === c.id}
+                    activeBg={colors.amber}
+                    activeFg={colors.bg}
+                    onPress={() => setStatsCompareContestId(c.id)}
+                  />
+                ))}
+              </View>
+            </>
+          )}
 
           <Chip
             label="⚔️ Confrontation directe uniquement"
