@@ -162,14 +162,52 @@ export interface DartsX01HistoryEntry {
   contestId?: string | null;
 }
 
-export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame | Trek12LiveGame | DartsX01LiveGame;
+export type CricketTarget = 15 | 16 | 17 | 18 | 19 | 20 | 'bull';
+export type CricketMarks = Record<CricketTarget, number>;
+
+export interface CricketTurn {
+  playerId: string;
+  throws: DartThrow[];
+}
+
+export interface CricketLiveGame {
+  gameId: 'darts-cricket';
+  playerIds: string[];
+  cutThroat: boolean;
+  turns: CricketTurn[];
+  currentThrows: DartThrow[];
+}
+
+export interface CricketHistoryEntry {
+  id: string;
+  gameId: 'darts-cricket';
+  date: string;
+  playerIds: string[];
+  cutThroat: boolean;
+  turns: CricketTurn[];
+  finalMarks: Record<string, CricketMarks>;
+  finalScores: Record<string, number>;
+  ranking: string[];
+  winnerId: string;
+  contestId?: string | null;
+}
+
+export type LiveGame =
+  | CinqRoisLiveGame
+  | TrouDuCulLiveGame
+  | SkyjoLiveGame
+  | QwirkleLiveGame
+  | Trek12LiveGame
+  | DartsX01LiveGame
+  | CricketLiveGame;
 export type HistoryEntry =
   | CinqRoisHistoryEntry
   | TrouDuCulHistoryEntry
   | SkyjoHistoryEntry
   | QwirkleHistoryEntry
   | Trek12HistoryEntry
-  | DartsX01HistoryEntry;
+  | DartsX01HistoryEntry
+  | CricketHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;

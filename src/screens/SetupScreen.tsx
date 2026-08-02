@@ -30,6 +30,7 @@ export function SetupScreen() {
   const gameChosen = !!setup.gameId;
   const isTdc = setup.gameId === 'trou-du-cul';
   const isDartsX01 = setup.gameId === 'darts-x01';
+  const isCricket = setup.gameId === 'darts-cricket';
   const selectedGame = GAMES.find((g) => g.id === setup.gameId);
   const minPlayers = selectedGame?.minPlayers ?? 2;
   const maxPlayers = selectedGame?.maxPlayers ?? 7;
@@ -148,6 +149,21 @@ export function SetupScreen() {
                   activeBg={colors.orange}
                   activeFg={colors.bg}
                   onPress={() => toggleVariant('doubleIn')}
+                />
+              </View>
+            </>
+          )}
+
+          {isCricket && (
+            <>
+              <SectionLabel>3. Variante</SectionLabel>
+              <View style={styles.chipsWrap}>
+                <Chip
+                  label="Cut-throat (score le plus bas gagne)"
+                  active={!!setup.variants.cutThroat}
+                  activeBg={colors.violet}
+                  activeFg={colors.white}
+                  onPress={() => toggleVariant('cutThroat')}
                 />
               </View>
             </>

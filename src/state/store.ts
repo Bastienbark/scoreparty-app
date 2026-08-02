@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
+import { deriveCricketState, previewCricketThrow } from '../games/dartsCricket';
 import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
@@ -146,6 +147,9 @@ interface AppState {
 
   dartsAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
   dartsUndoThrow: () => void;
+
+  dartsCricketAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsCricketUndoThrow: () => void;
 
   saveGame: () => void;
   resetLiveGame: () => void;
@@ -366,7 +370,9 @@ export const useAppStore = create<AppState>((set, get) => {
             ? { revolution: false, bombes: false, putsch: false, suites: false }
             : gameId === 'darts-x01'
               ? { '501': true, doubleOut: true, doubleIn: false }
-              : ({} as TrouDuCulVariants),
+              : gameId === 'darts-cricket'
+                ? { cutThroat: false }
+                : ({} as TrouDuCulVariants),
       },
     })),
 
@@ -549,6 +555,38 @@ export const useAppStore = create<AppState>((set, get) => {
     set((s) => {
       const live = s.liveGame;
       if (!live || live.gameId !== 'darts-x01') return {};
+      if (live.currentThrows.length > 0) {
+        return { liveGame: { ...live, currentThrows: live.currentThrows.slice(0, -1) } };
+      }
+      if (live.turns.length === 0) return {};
+      const lastTurn = live.turns[live.turns.length - 1];
+      return { liveGame: { ...live, turns: live.turns.slice(0, -1), currentThrows: lastTurn.throws.slice(0, -1) } };
+    }),
+
+  dartsCricketAddThrow: (segment, multiplier) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'darts-cricket') return;
+    if (live.currentThrows.length >= 3) return;
+    const { winnerId, activePlayerId } = deriveCricketState(live);
+    if (winnerId || !activePlayerId) return;
+
+    const points = dartPoints(segment, multiplier);
+    const throwObj = { segment, multiplier, points };
+    const preview = previewCricketThrow(live, activePlayerId, throwObj);
+    const newThrows = [...live.currentThrows, throwObj];
+
+    if (preview.winnerId || newThrows.length === 3) {
+      const turn = { playerId: activePlayerId, throws: newThrows };
+      set({ liveGame: { ...live, turns: [...live.turns, turn], currentThrows: [] } });
+    } else {
+      set({ liveGame: { ...live, currentThrows: newThrows } });
+    }
+  },
+
+  dartsCricketUndoThrow: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'darts-cricket') return {};
       if (live.currentThrows.length > 0) {
         return { liveGame: { ...live, currentThrows: live.currentThrows.slice(0, -1) } };
       }
