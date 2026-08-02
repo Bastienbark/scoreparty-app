@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { CloudBackupCard } from '../components/CloudBackupCard';
+import { ContestCard } from '../components/ContestCard';
 import { IconBadge } from '../components/IconBadge';
 import { PressableScale } from '../components/PressableScale';
 import { ResumeGameBanner } from '../components/ResumeGameBanner';
@@ -62,6 +63,8 @@ export function HomeScreen() {
           <Text style={styles.shortcutSub}>Progression &amp; classements</Text>
         </PressableScale>
       </View>
+
+      <ContestCard />
 
       <CloudBackupCard />
 

@@ -5,6 +5,7 @@ import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, no
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
+  Contest,
   HistoryEntry,
   KeypadModalState,
   LiveGame,
@@ -20,6 +21,7 @@ const PLAYERS_KEY = 'scoreparty_players';
 const HISTORY_KEY = 'scoreparty_history';
 const SYNC_CODE_KEY = 'scoreparty_sync_code';
 const LIVE_GAME_KEY = 'scoreparty_live_game';
+const CONTESTS_KEY = 'scoreparty_contests';
 
 interface LiveGameSnapshot {
   liveGame: LiveGame;
@@ -83,7 +85,9 @@ interface AppState {
 
   historyFilters: HistoryFilters;
 
-  statsMode: 'single' | 'compare';
+  contests: Contest[];
+
+  statsMode: 'single' | 'compare' | 'contest';
   statsPlayerId: string | null;
   statsCompareIds: string[];
   statsCompareGameId: string | null;
@@ -100,6 +104,9 @@ interface AppState {
 
   hydrate: () => Promise<void>;
   playerById: (id: string) => Player;
+
+  startContest: (name: string) => void;
+  endContest: () => void;
 
   syncNow: () => Promise<void>;
   restoreFromSyncCode: (code: string) => Promise<{ ok: boolean; error?: string }>;
@@ -142,7 +149,7 @@ interface AppState {
   setHistDateTo: (v: string) => void;
   toggleHistExpand: (id: string) => void;
 
-  setStatsMode: (m: 'single' | 'compare') => void;
+  setStatsMode: (m: 'single' | 'compare' | 'contest') => void;
   selectStatsPlayer: (id: string) => void;
   toggleStatsCompare: (id: string) => void;
   setStatsCompareGameId: (id: string | null) => void;
@@ -181,6 +188,8 @@ export const useAppStore = create<AppState>((set, get) => {
 
   historyFilters: { gameIds: [], playerIds: [], dateFrom: '', dateTo: '', expanded: {} },
 
+  contests: [],
+
   statsMode: 'single',
   statsPlayerId: null,
   statsCompareIds: [],
@@ -208,6 +217,8 @@ export const useAppStore = create<AppState>((set, get) => {
       await saveJSON(HISTORY_KEY, history);
     }
 
+    const contests = (await loadJSON<Contest[]>(CONTESTS_KEY)) ?? [];
+
     let syncCode = await loadString(SYNC_CODE_KEY);
     if (!syncCode) {
       syncCode = generateSyncCode();
@@ -219,6 +230,7 @@ export const useAppStore = create<AppState>((set, get) => {
     set({
       players,
       history,
+      contests,
       statsPlayerId: players[0]?.id ?? null,
       hydrated: true,
       syncCode,
@@ -228,6 +240,29 @@ export const useAppStore = create<AppState>((set, get) => {
   },
 
   playerById: (id) => get().players.find((p) => p.id === id) ?? { id, name: '?', color: '#888' },
+
+  startContest: (name) => {
+    if (get().contests.some((c) => !c.endedAt)) return;
+    const contest: Contest = {
+      id: uid(),
+      name: name.trim() || 'Concours',
+      startedAt: new Date().toISOString(),
+      endedAt: null,
+    };
+    set((s) => {
+      const contests = [contest, ...s.contests];
+      saveJSON(CONTESTS_KEY, contests);
+      return { contests, statsMode: 'contest' };
+    });
+  },
+
+  endContest: () => {
+    set((s) => {
+      const contests = s.contests.map((c) => (c.endedAt ? c : { ...c, endedAt: new Date().toISOString() }));
+      saveJSON(CONTESTS_KEY, contests);
+      return { contests };
+    });
+  },
 
   syncNow: async () => {
     const { syncCode, players, history } = get();
@@ -287,10 +322,12 @@ export const useAppStore = create<AppState>((set, get) => {
     const newCode = generateSyncCode();
     await saveJSON(PLAYERS_KEY, []);
     await saveJSON(HISTORY_KEY, []);
+    await saveJSON(CONTESTS_KEY, []);
     await saveString(SYNC_CODE_KEY, newCode);
     set({
       players: [],
       history: [],
+      contests: [],
       statsPlayerId: null,
       statsCompareIds: [],
       syncCode: newCode,
@@ -469,6 +506,8 @@ export const useAppStore = create<AppState>((set, get) => {
     if (!live) return;
     const game = getGameOrThrow(live.gameId);
     const entry = game.buildHistoryEntry(live, uid(), new Date().toISOString());
+    const activeContest = get().contests.find((c) => !c.endedAt);
+    if (activeContest) entry.contestId = activeContest.id;
     set((s) => {
       const history = [entry, ...s.history];
       saveJSON(HISTORY_KEY, history);

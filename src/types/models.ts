@@ -4,6 +4,13 @@ export interface Player {
   color: string;
 }
 
+export interface Contest {
+  id: string;
+  name: string;
+  startedAt: string;
+  endedAt: string | null;
+}
+
 export interface CinqRoisRound {
   round: number;
   scores: Record<string, number>;
@@ -25,6 +32,7 @@ export interface CinqRoisHistoryEntry {
   totals: Record<string, number>;
   ranking: string[];
   roundsPlayed: number;
+  contestId?: string | null;
 }
 
 export interface TrouDuCulRound {
@@ -50,6 +58,7 @@ export interface TrouDuCulHistoryEntry {
   cumulative: Record<string, number>;
   ranking: string[];
   variants: TrouDuCulVariants;
+  contestId?: string | null;
 }
 
 export interface SkyjoRound {
@@ -73,6 +82,7 @@ export interface SkyjoHistoryEntry {
   totals: Record<string, number>;
   ranking: string[];
   roundsPlayed: number;
+  contestId?: string | null;
 }
 
 export interface QwirkleTurn {
@@ -94,6 +104,7 @@ export interface QwirkleHistoryEntry {
   turns: QwirkleTurn[];
   totals: Record<string, number>;
   ranking: string[];
+  contestId?: string | null;
 }
 
 export interface Trek12LiveGame {
@@ -109,6 +120,7 @@ export interface Trek12HistoryEntry {
   playerIds: string[];
   totals: Record<string, number>;
   ranking: string[];
+  contestId?: string | null;
 }
 
 export type LiveGame = CinqRoisLiveGame | TrouDuCulLiveGame | SkyjoLiveGame | QwirkleLiveGame | Trek12LiveGame;

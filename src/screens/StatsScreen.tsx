@@ -2,12 +2,15 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Chip } from '../components/Chip';
 import { PressableScale } from '../components/PressableScale';
+import { RankingRow } from '../components/RankingRow';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { GAMES, getGame } from '../games/registry';
 import { playerRoleCounts, rolePercent, roleStyle, ROLE_STATS_ORDER } from '../games/trouDuCul';
+import { buildContestLeaderboard, contestGames } from '../state/contestStats';
 import { useAppStore } from '../state/store';
 import { HistoryEntry, TrouDuCulHistoryEntry } from '../types/models';
 import { colors, fonts, radii } from '../theme/tokens';
+import { fmtDate } from '../utils/date';
 
 interface SingleStats {
   gamesPlayed: number;
@@ -52,6 +55,7 @@ function buildSingle(pid: string, history: HistoryEntry[]): SingleStats | null {
 export function StatsScreen() {
   const players = useAppStore((s) => s.players);
   const history = useAppStore((s) => s.history);
+  const contests = useAppStore((s) => s.contests);
   const statsMode = useAppStore((s) => s.statsMode);
   const statsPlayerId = useAppStore((s) => s.statsPlayerId);
   const statsCompareIds = useAppStore((s) => s.statsCompareIds);
@@ -65,6 +69,13 @@ export function StatsScreen() {
   const playerById = useAppStore((s) => s.playerById);
 
   const single = useMemo(() => (statsPlayerId ? buildSingle(statsPlayerId, history) : null), [statsPlayerId, history]);
+
+  const shownContest = useMemo(() => contests.find((c) => !c.endedAt) ?? contests[0] ?? null, [contests]);
+  const contestLeaderboard = useMemo(
+    () => (shownContest ? buildContestLeaderboard(shownContest.id, history) : []),
+    [shownContest, history],
+  );
+  const contestGamesCount = useMemo(() => (shownContest ? contestGames(shownContest.id, history).length : 0), [shownContest, history]);
 
   const compare = useMemo(() => {
     if (statsCompareIds.length < 2) return null;
@@ -143,6 +154,13 @@ export function StatsScreen() {
           style={[styles.modeBtn, statsMode === 'compare' && { backgroundColor: colors.teal }]}
         >
           <Text style={[styles.modeLabel, { color: statsMode === 'compare' ? colors.bg : colors.textMuted }]}>Comparatif</Text>
+        </PressableScale>
+        <PressableScale
+          scaleTo={0.97}
+          onPress={() => setStatsMode('contest')}
+          style={[styles.modeBtn, statsMode === 'contest' && { backgroundColor: colors.teal }]}
+        >
+          <Text style={[styles.modeLabel, { color: statsMode === 'contest' ? colors.bg : colors.textMuted }]}>🏆 Concours</Text>
         </PressableScale>
       </View>
 
@@ -264,6 +282,44 @@ export function StatsScreen() {
             </>
           ) : (
             <Text style={styles.empty}>Sélectionne au moins 2 joueurs pour comparer.</Text>
+          )}
+        </>
+      )}
+
+      {statsMode === 'contest' && (
+        <>
+          {shownContest ? (
+            <>
+              <Text style={styles.sectionTitle}>{shownContest.name}</Text>
+              <Text style={styles.hint}>
+                {shownContest.endedAt ? `Terminé le ${fmtDate(shownContest.endedAt)}` : `En cours depuis le ${fmtDate(shownContest.startedAt)}`}
+                {' · '}
+                {contestGamesCount} partie{contestGamesCount > 1 ? 's' : ''}
+              </Text>
+
+              {contestLeaderboard.length ? (
+                <View style={{ gap: 8 }}>
+                  {contestLeaderboard.map((row, idx) => {
+                    const p = playerById(row.playerId);
+                    return (
+                      <RankingRow
+                        key={row.playerId}
+                        position={idx + 1}
+                        name={p.name}
+                        color={p.color}
+                        scoreLabel={`${row.points} pt${row.points > 1 ? 's' : ''}`}
+                        highlight={idx === 0}
+                        medal={idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : undefined}
+                      />
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={styles.empty}>Aucune partie enregistrée pour ce concours pour l'instant.</Text>
+              )}
+            </>
+          ) : (
+            <Text style={styles.empty}>Aucun concours pour l'instant. Lance-en un depuis l'écran d'accueil.</Text>
           )}
         </>
       )}
