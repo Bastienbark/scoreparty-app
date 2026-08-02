@@ -26,6 +26,7 @@ const CONTESTS_KEY = 'scoreparty_contests';
 interface LiveGameSnapshot {
   liveGame: LiveGame;
   recapSaved: boolean;
+  countsForContest: boolean;
 }
 
 export type SyncStatus = 'disabled' | 'idle' | 'syncing' | 'synced' | 'error';
@@ -82,6 +83,7 @@ interface AppState {
   liveGame: LiveGame | null;
   modal: KeypadModalState | null;
   recapSaved: boolean;
+  liveGameCountsForContest: boolean;
 
   historyFilters: HistoryFilters;
 
@@ -118,6 +120,7 @@ interface AppState {
   setSetupNewPlayerName: (v: string) => void;
   addSetupPlayer: () => void;
   toggleSetupVariant: (key: string) => void;
+  toggleSetupCountsForContest: () => void;
   startGame: () => boolean;
 
   openCell: (round: number, pid: string) => void;
@@ -160,7 +163,7 @@ interface AppState {
   toggleRulesTheme: (id: string) => void;
 }
 
-const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '' };
+const emptySetup: SetupState = { gameId: null, selectedPlayerIds: [], variants: {}, newPlayerName: '', countsForContest: true };
 
 function maxPlayersFor(gameId: string | null): number {
   if (!gameId) return 7;
@@ -185,6 +188,7 @@ export const useAppStore = create<AppState>((set, get) => {
   liveGame: null,
   modal: null,
   recapSaved: false,
+  liveGameCountsForContest: true,
 
   historyFilters: { gameIds: [], playerIds: [], dateFrom: '', dateTo: '', expanded: {} },
 
@@ -236,6 +240,7 @@ export const useAppStore = create<AppState>((set, get) => {
       syncCode,
       liveGame: liveSnapshot?.liveGame ?? null,
       recapSaved: liveSnapshot?.recapSaved ?? false,
+      liveGameCountsForContest: liveSnapshot?.countsForContest ?? true,
     });
   },
 
@@ -336,6 +341,7 @@ export const useAppStore = create<AppState>((set, get) => {
       syncError: null,
       liveGame: null,
       recapSaved: false,
+      liveGameCountsForContest: true,
       modal: null,
     });
   },
@@ -384,15 +390,17 @@ export const useAppStore = create<AppState>((set, get) => {
   toggleSetupVariant: (key) =>
     set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, [key]: !s.setup.variants[key] } } })),
 
+  toggleSetupCountsForContest: () => set((s) => ({ setup: { ...s.setup, countsForContest: !s.setup.countsForContest } })),
+
   startGame: () => {
-    const { gameId, selectedPlayerIds, variants } = get().setup;
+    const { gameId, selectedPlayerIds, variants, countsForContest } = get().setup;
     if (!gameId) return false;
     const game = getGameOrThrow(gameId);
     const min = game.minPlayers ?? 2;
     const max = game.maxPlayers ?? 7;
     if (selectedPlayerIds.length < min || selectedPlayerIds.length > max) return false;
     const liveGame = game.createLiveGame(selectedPlayerIds, variants);
-    set({ liveGame, recapSaved: false });
+    set({ liveGame, recapSaved: false, liveGameCountsForContest: countsForContest });
     return true;
   },
 
@@ -507,7 +515,7 @@ export const useAppStore = create<AppState>((set, get) => {
     const game = getGameOrThrow(live.gameId);
     const entry = game.buildHistoryEntry(live, uid(), new Date().toISOString());
     const activeContest = get().contests.find((c) => !c.endedAt);
-    if (activeContest) entry.contestId = activeContest.id;
+    if (activeContest && get().liveGameCountsForContest) entry.contestId = activeContest.id;
     set((s) => {
       const history = [entry, ...s.history];
       saveJSON(HISTORY_KEY, history);
@@ -516,7 +524,7 @@ export const useAppStore = create<AppState>((set, get) => {
     schedulePush();
   },
 
-  resetLiveGame: () => set({ liveGame: null, recapSaved: false, modal: null }),
+  resetLiveGame: () => set({ liveGame: null, recapSaved: false, modal: null, liveGameCountsForContest: true }),
 
   deleteHistoryEntry: (id) => {
     set((s) => {
@@ -566,9 +574,15 @@ export const useAppStore = create<AppState>((set, get) => {
 // only committing to history on "Enregistrer" (saveGame) would otherwise
 // mean losing a whole game if the app/tab gets closed mid-way.
 useAppStore.subscribe((state, prevState) => {
-  if (state.liveGame === prevState.liveGame && state.recapSaved === prevState.recapSaved) return;
+  if (
+    state.liveGame === prevState.liveGame &&
+    state.recapSaved === prevState.recapSaved &&
+    state.liveGameCountsForContest === prevState.liveGameCountsForContest
+  ) {
+    return;
+  }
   if (state.liveGame) {
-    saveJSON(LIVE_GAME_KEY, { liveGame: state.liveGame, recapSaved: state.recapSaved });
+    saveJSON(LIVE_GAME_KEY, { liveGame: state.liveGame, recapSaved: state.recapSaved, countsForContest: state.liveGameCountsForContest });
   } else {
     AsyncStorage.removeItem(LIVE_GAME_KEY).catch(() => {});
   }

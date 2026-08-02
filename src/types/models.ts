@@ -131,6 +131,7 @@ export interface SetupState {
   selectedPlayerIds: string[];
   variants: TrouDuCulVariants;
   newPlayerName: string;
+  countsForContest: boolean;
 }
 
 export interface KeypadModalState {

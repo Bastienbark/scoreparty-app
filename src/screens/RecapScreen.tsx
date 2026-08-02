@@ -23,6 +23,9 @@ export function RecapScreen() {
   const playerById = useAppStore((s) => s.playerById);
   const saveGame = useAppStore((s) => s.saveGame);
   const resetLiveGame = useAppStore((s) => s.resetLiveGame);
+  const liveGameCountsForContest = useAppStore((s) => s.liveGameCountsForContest);
+  const contests = useAppStore((s) => s.contests);
+  const activeContest = contests.find((c) => !c.endedAt) ?? null;
 
   const playersMap = useMemo(() => {
     const m: Record<string, Player> = {};
@@ -76,6 +79,11 @@ export function RecapScreen() {
           <View style={styles.savedBox}>
             <Text style={styles.savedText}>✅ Partie enregistrée dans l'historique !</Text>
           </View>
+          {activeContest && (
+            <Text style={styles.contestNote}>
+              {liveGameCountsForContest ? `🏆 Comptée pour "${activeContest.name}"` : '🚫 Non comptée pour le concours'}
+            </Text>
+          )}
           <PressableScale onPress={goHome} style={styles.homeBtn}>
             <Text style={styles.homeBtnLabel}>Retour à l'accueil</Text>
           </PressableScale>
@@ -104,6 +112,7 @@ const styles = StyleSheet.create({
   variants: { width: '100%', fontSize: 12, color: colors.textMutedDark, marginTop: 14, textAlign: 'left' },
   savedBox: { width: '100%', marginTop: 20, backgroundColor: colors.teal, borderRadius: radii.md, padding: 14 },
   savedText: { fontFamily: fonts.heading, fontWeight: '600', fontSize: 14, color: colors.bg },
+  contestNote: { fontSize: 12, color: colors.textMuted, marginTop: 10, textAlign: 'center' },
   homeBtn: { width: '100%', marginTop: 12, borderRadius: radii.lg, padding: 16, backgroundColor: colors.surface, alignItems: 'center' },
   homeBtnLabel: { fontFamily: fonts.heading, fontSize: 15, fontWeight: '600', color: colors.textPrimary },
   saveBtn: { width: '100%', borderRadius: radii.lg, padding: 18, alignItems: 'center' },

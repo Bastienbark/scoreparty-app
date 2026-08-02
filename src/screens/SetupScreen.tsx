@@ -21,7 +21,10 @@ export function SetupScreen() {
   const setNewPlayerName = useAppStore((s) => s.setSetupNewPlayerName);
   const addPlayer = useAppStore((s) => s.addSetupPlayer);
   const toggleVariant = useAppStore((s) => s.toggleSetupVariant);
+  const toggleCountsForContest = useAppStore((s) => s.toggleSetupCountsForContest);
   const startGame = useAppStore((s) => s.startGame);
+  const contests = useAppStore((s) => s.contests);
+  const activeContest = contests.find((c) => !c.endedAt) ?? null;
 
   const gameChosen = !!setup.gameId;
   const isTdc = setup.gameId === 'trou-du-cul';
@@ -110,6 +113,21 @@ export function SetupScreen() {
                     onPress={() => toggleVariant(v.key)}
                   />
                 ))}
+              </View>
+            </>
+          )}
+
+          {activeContest && (
+            <>
+              <SectionLabel>Concours</SectionLabel>
+              <View style={{ marginBottom: 20 }}>
+                <Chip
+                  label={setup.countsForContest ? `🏆 Compte pour "${activeContest.name}"` : '🚫 Partie hors concours'}
+                  active={setup.countsForContest}
+                  activeBg={colors.amber}
+                  activeFg={colors.bg}
+                  onPress={toggleCountsForContest}
+                />
               </View>
             </>
           )}
