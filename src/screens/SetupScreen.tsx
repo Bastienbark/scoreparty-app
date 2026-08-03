@@ -7,7 +7,7 @@ import { Chip } from '../components/Chip';
 import { PressableScale } from '../components/PressableScale';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionLabel } from '../components/SectionLabel';
-import { resolveTeamId } from '../games/dartsCricket';
+import { resolveTeamId, teamSizesValid } from '../games/dartsCricket';
 import { GAMES } from '../games/registry';
 import type { GameDef } from '../games/types';
 import { HomeStackNavProp } from '../navigation/types';
@@ -15,6 +15,7 @@ import { useAppStore } from '../state/store';
 import { colors, fonts, radii } from '../theme/tokens';
 
 const DART_GAME_IDS = ['darts-x01', 'darts-cricket', 'darts-atc', 'darts-shanghai'];
+const TEAM_COLORS: Record<string, string> = { A: colors.teal, B: colors.orange, C: colors.violet, D: colors.cyan };
 
 function renderGameTile(g: GameDef, selected: boolean, onPress: () => void) {
   return (
@@ -69,7 +70,9 @@ export function SetupScreen() {
   const minPlayers = selectedGame?.minPlayers ?? 2;
   const maxPlayers = selectedGame?.maxPlayers ?? 7;
   const count = setup.selectedPlayerIds.length;
-  const canStart = gameChosen && count >= minPlayers && count <= maxPlayers;
+  const cricketTeamMode = isCricket && !!setup.variants.teamMode;
+  const teamsValid = !cricketTeamMode || (count >= 4 && count % 2 === 0 && teamSizesValid(setup.selectedPlayerIds, setup.dartsTeams));
+  const canStart = gameChosen && count >= minPlayers && count <= maxPlayers && teamsValid;
 
   return (
     <ScreenContainer>
@@ -231,12 +234,12 @@ export function SetupScreen() {
 
               {!!setup.variants.teamMode && setup.selectedPlayerIds.length > 0 && (
                 <>
-                  <SectionLabel>Équipes (touche pour changer)</SectionLabel>
-                  <View style={{ gap: 8, marginBottom: 20 }}>
+                  <SectionLabel>Équipes de 2 (touche pour changer)</SectionLabel>
+                  <View style={{ gap: 8, marginBottom: 10 }}>
                     {setup.selectedPlayerIds.map((pid, idx) => {
                       const player = players.find((p) => p.id === pid);
                       const team = resolveTeamId(pid, idx, setup.dartsTeams);
-                      const teamColor = team === 'A' ? colors.teal : colors.orange;
+                      const teamColor = TEAM_COLORS[team] ?? colors.textMuted;
                       return (
                         <PressableScale
                           key={pid}
@@ -251,6 +254,11 @@ export function SetupScreen() {
                       );
                     })}
                   </View>
+                  {!teamsValid && (
+                    <Text style={[styles.hint, { color: colors.red, marginBottom: 10 }]}>
+                      Chaque équipe doit compter exactement 2 joueurs (4, 6 ou 8 joueurs au total).
+                    </Text>
+                  )}
                 </>
               )}
             </>

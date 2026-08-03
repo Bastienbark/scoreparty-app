@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState as RNAppState, Platform } from 'react-native';
 import { create } from 'zustand';
 import { deleteSnapshot, fetchSnapshot, firebaseConfigured, generateSyncCode, normalizeSyncCode, pushSnapshot } from './cloudSync';
-import { buildTeamOf, deriveCricketState, previewCricketThrow, rerollSlotValues, resolveTeamId } from '../games/dartsCricket';
+import { buildTeamOf, deriveCricketState, previewCricketThrow, rerollSlotValues, resolveTeamId, TEAM_LETTERS } from '../games/dartsCricket';
 import { deriveAtcState } from '../games/dartsAroundTheClock';
 import { deriveShanghaiState } from '../games/dartsShanghai';
 import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
@@ -431,8 +431,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
   toggleSetupPlayerTeam: (pid, idx) =>
     set((s) => {
+      const numTeams = Math.max(1, Math.ceil(s.setup.selectedPlayerIds.length / 2));
+      const letters: string[] = TEAM_LETTERS.slice(0, numTeams);
       const current = resolveTeamId(pid, idx, s.setup.dartsTeams);
-      return { setup: { ...s.setup, dartsTeams: { ...s.setup.dartsTeams, [pid]: current === 'A' ? 'B' : 'A' } } };
+      const next = letters[(letters.indexOf(current) + 1) % letters.length] ?? letters[0];
+      return { setup: { ...s.setup, dartsTeams: { ...s.setup.dartsTeams, [pid]: next } } };
     }),
 
   toggleSetupCountsForContest: () => set((s) => ({ setup: { ...s.setup, countsForContest: !s.setup.countsForContest } })),

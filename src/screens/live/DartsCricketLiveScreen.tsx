@@ -30,7 +30,7 @@ function markSymbol(n: number): string {
   return '·';
 }
 
-const TEAM_COLOR: Record<string, string> = { A: colors.teal, B: colors.orange };
+const TEAM_COLOR: Record<string, string> = { A: colors.teal, B: colors.orange, C: colors.violet, D: colors.cyan };
 
 export function DartsCricketLiveScreen() {
   const navigation = useNavigation<HomeStackNavProp<'Live'>>();

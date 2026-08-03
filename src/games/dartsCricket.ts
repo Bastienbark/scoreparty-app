@@ -30,14 +30,28 @@ function resolveSlot(slotValues: CricketSlotValues, segment: number | 'bull' | '
   return found ?? null;
 }
 
-export function resolveTeamId(pid: string, idx: number, overrides: Record<string, 'A' | 'B'>): 'A' | 'B' {
-  return overrides[pid] ?? (idx % 2 === 0 ? 'A' : 'B');
+/** Teams are always pairs of 2 — up to 4 teams for the 8-player max. */
+export const TEAM_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
+export function resolveTeamId(pid: string, idx: number, overrides: Record<string, string> = {}): string {
+  return overrides[pid] ?? TEAM_LETTERS[Math.floor(idx / 2)] ?? TEAM_LETTERS[TEAM_LETTERS.length - 1];
 }
 
-export function buildTeamOf(playerIds: string[], overrides: Record<string, 'A' | 'B'> = {}): Record<string, string> {
+export function buildTeamOf(playerIds: string[], overrides: Record<string, string> = {}): Record<string, string> {
   const teamOf: Record<string, string> = {};
   playerIds.forEach((pid, idx) => (teamOf[pid] = resolveTeamId(pid, idx, overrides)));
   return teamOf;
+}
+
+/** Every team must have exactly 2 members — checked before a team-mode game can start. */
+export function teamSizesValid(playerIds: string[], overrides: Record<string, string> = {}): boolean {
+  const teamOf = buildTeamOf(playerIds, overrides);
+  const counts: Record<string, number> = {};
+  playerIds.forEach((pid) => {
+    const t = teamOf[pid];
+    counts[t] = (counts[t] ?? 0) + 1;
+  });
+  return Object.values(counts).every((c) => c === 2);
 }
 
 /**

@@ -295,8 +295,8 @@ export interface SetupState {
   variants: TrouDuCulVariants;
   newPlayerName: string;
   countsForContest: boolean;
-  /** Cricket team-mode overrides; players not listed default to alternating A/B by selection order. */
-  dartsTeams: Record<string, 'A' | 'B'>;
+  /** Cricket team-mode overrides (teams of 2); players not listed default to pairing by selection order (A, B, C…). */
+  dartsTeams: Record<string, string>;
 }
 
 export interface KeypadModalState {
