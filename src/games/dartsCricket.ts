@@ -106,14 +106,13 @@ function findWinnerTeam(playerIds: string[], teamOf: Record<string, string>, mar
 /**
  * Applies one dart. A dart's multiplier adds that many marks to the resolved
  * slot (capped at 3 = closed); marks beyond what's needed to close are
- * "excess" and score at the slot's current face value each — but the
- * trigger differs by mode:
- *  - Classic: scores once the THROWER's whole TEAM has closed the slot
- *    (every teammate individually at 3 marks), credited to the team (and to
- *    the thrower's own tally), as long as an opposing team still has it open.
- *  - Cut-throat: scores once the THROWER has personally closed the slot
- *    (teammates' status irrelevant), redirected to each opposing player who
- *    hasn't personally closed it — and to their team's total.
+ * "excess" and score at the slot's current face value each. Both modes share
+ * the same trigger — the THROWER's whole TEAM must have closed the slot
+ * (every teammate individually at 3 marks) — only the destination differs:
+ *  - Classic: credited to the team's own total (and the thrower's tally), as
+ *    long as an opposing team still has the slot open.
+ *  - Cut-throat: redirected to each opposing player who hasn't personally
+ *    closed it — and to their team's total.
  */
 function applyThrow(
   marks: Record<string, CricketMarks>,
@@ -134,7 +133,6 @@ function applyThrow(
   const neededToClose = Math.max(0, 3 - current);
   const excess = Math.max(0, multiplier - neededToClose);
 
-  const throwerClosedBefore = current >= 3;
   const teamClosedBefore = playerIds.filter((id) => teamOf[id] === myTeam).every((id) => marks[id][slotKey] >= 3);
 
   myMarks[slotKey] = Math.min(3, current + multiplier);
@@ -142,7 +140,7 @@ function applyThrow(
 
   const value = faceValue * excess;
   if (cutThroat) {
-    if (!throwerClosedBefore) return;
+    if (!teamClosedBefore) return;
     const openOpponents = playerIds.filter((id) => teamOf[id] !== myTeam && marks[id][slotKey] < 3);
     openOpponents.forEach((oid) => {
       individualScores[oid] += value;
@@ -269,7 +267,7 @@ export const dartsCricketGame: GameDef<CricketLiveGame, CricketHistoryEntry> = {
       items: [
         { q: 'Comment fonctionnent les marques en équipe ?', a: 'Chaque joueur marque individuellement comme en solo. Une cible est "fermée pour l\'équipe" seulement quand tous ses membres l\'ont individuellement fermée.' },
         { q: 'Qui peut marquer des points en classique ?', a: "Une fois la cible fermée pour toute l'équipe, n'importe quel membre qui la retouche rapporte des points à l'équipe." },
-        { q: 'Et en cut-throat ?', a: "Chaque joueur peut rediriger des points dès qu'il a personnellement fermé la cible, vers chaque adversaire (et son équipe) qui ne l'a pas encore fermée individuellement — pas besoin d'attendre que toute l'équipe adverse ait fermé." },
+        { q: 'Et en cut-throat ?', a: "Même déclencheur qu'en classique — il faut que toute l'équipe du lanceur ait fermé la cible — mais les points en trop sont redirigés vers chaque adversaire (et son équipe) qui ne l'a pas encore fermée individuellement." },
       ],
     },
     {
