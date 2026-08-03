@@ -271,18 +271,23 @@ export const dartsCricketGame: GameDef<CricketLiveGame, CricketHistoryEntry> = {
   createLiveGame(playerIds, variants) {
     const v = variants ?? {};
     const teamMode = !!v.teamMode;
+    const crazyMode = !!v.crazyMode;
     const teamOf: Record<string, string> = {};
     playerIds.forEach((pid, idx) => (teamOf[pid] = teamMode ? resolveTeamId(pid, idx, {}) : pid));
+    const noMarksYet: Record<string, CricketMarks> = {};
+    playerIds.forEach((pid) => (noMarksYet[pid] = emptyMarks()));
     return {
       gameId: 'darts-cricket',
       playerIds,
       cutThroat: !!v.cutThroat,
       teamMode,
-      crazyMode: !!v.crazyMode,
+      crazyMode,
       teamOf,
       turns: [],
       currentThrows: [],
-      currentSlotValues: defaultSlotValues(),
+      // Crazy Cricket shuffles the 6 numbered slots right from the start — no
+      // "classic 20..15" opening arrangement, everyone throws at random values.
+      currentSlotValues: crazyMode ? rerollSlotValues(noMarksYet, playerIds, true, defaultSlotValues()) : defaultSlotValues(),
     };
   },
 
