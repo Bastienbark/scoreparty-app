@@ -3,7 +3,8 @@ import type { GameDef } from './types';
 
 export const X01_DEFAULT_START = 501;
 
-export function dartPoints(segment: number | 'bull', multiplier: 1 | 2 | 3): number {
+export function dartPoints(segment: number | 'bull' | 'miss', multiplier: 1 | 2 | 3): number {
+  if (segment === 'miss') return 0;
   if (segment === 'bull') return multiplier === 2 ? 50 : 25;
   return segment * multiplier;
 }

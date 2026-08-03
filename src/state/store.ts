@@ -149,16 +149,16 @@ interface AppState {
   tdcResetRound: () => void;
   tdcNextRound: () => void;
 
-  dartsAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsAddThrow: (segment: number | 'bull' | 'miss', multiplier: 1 | 2 | 3) => void;
   dartsUndoThrow: () => void;
 
-  dartsCricketAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsCricketAddThrow: (segment: number | 'bull' | 'miss', multiplier: 1 | 2 | 3) => void;
   dartsCricketUndoThrow: () => void;
 
-  dartsAtcAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsAtcAddThrow: (segment: number | 'bull' | 'miss', multiplier: 1 | 2 | 3) => void;
   dartsAtcUndoThrow: () => void;
 
-  dartsShanghaiAddThrow: (segment: number | 'bull', multiplier: 1 | 2 | 3) => void;
+  dartsShanghaiAddThrow: (segment: number | 'bull' | 'miss', multiplier: 1 | 2 | 3) => void;
   dartsShanghaiUndoThrow: () => void;
 
   saveGame: () => void;

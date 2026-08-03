@@ -6,9 +6,7 @@ import { Button } from '../../components/Button';
 import { DartsThrowPad } from '../../components/DartsThrowPad';
 import { LiveScreenLayout } from '../../components/LiveScreenLayout';
 import { PressableScale } from '../../components/PressableScale';
-import { RankingRow } from '../../components/RankingRow';
 import { CRICKET_SLOT_KEYS, deriveCricketState } from '../../games/dartsCricket';
-import { getGameOrThrow } from '../../games/registry';
 import { HomeStackNavProp } from '../../navigation/types';
 import { useAppStore } from '../../state/store';
 import { CricketLiveGame, CricketSlotKey, DartThrow, Player } from '../../types/models';
@@ -18,6 +16,7 @@ const LABEL_COL = 30;
 const CELL_COL = 46;
 
 function throwLabel(t: DartThrow): string {
+  if (t.segment === 'miss') return 'Raté';
   if (t.segment === 'bull') return t.multiplier === 2 ? 'Bull' : '25';
   if (t.multiplier === 1) return `${t.segment}`;
   if (t.multiplier === 2) return `D${t.segment}`;
@@ -46,8 +45,6 @@ export function DartsCricketLiveScreen() {
     return m;
   }, [players]);
 
-  const game = getGameOrThrow('darts-cricket');
-  const ranking = game.liveRanking(liveGame, playersMap);
   const { marks, individualScores, teamScores, winnerTeamId, activePlayerId } = deriveCricketState(liveGame);
   const activePlayer = activePlayerId ? playersMap[activePlayerId] : null;
   const dartsThrown = liveGame.currentThrows.length;
@@ -108,11 +105,13 @@ export function DartsCricketLiveScreen() {
         )
       )}
 
-      {!winnerTeamId && <DartsThrowPad onThrow={dartsCricketAddThrow} enabledSegments={enabledSegments} />}
-
-      <PressableScale scaleTo={0.96} onPress={dartsCricketUndoThrow} disabled={!canUndo} style={[styles.undoBtn, !canUndo && { opacity: 0.4 }]}>
-        <Text style={styles.undoLabel}>⌫ Annuler la dernière fléchette</Text>
-      </PressableScale>
+      {!winnerTeamId ? (
+        <DartsThrowPad onThrow={dartsCricketAddThrow} onUndo={dartsCricketUndoThrow} canUndo={canUndo} enabledSegments={enabledSegments} />
+      ) : (
+        <PressableScale scaleTo={0.96} onPress={dartsCricketUndoThrow} disabled={!canUndo} style={[styles.undoBtn, !canUndo && { opacity: 0.4 }]}>
+          <Text style={styles.undoLabel}>⌫ Annuler la dernière fléchette</Text>
+        </PressableScale>
+      )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableWrap}>
         <View>
@@ -177,23 +176,6 @@ export function DartsCricketLiveScreen() {
           )}
         </View>
       </ScrollView>
-
-      <Text style={styles.sectionTitle}>Classement en direct</Text>
-      <View style={{ gap: 6, marginBottom: 20 }}>
-        {ranking.map((r, idx) => {
-          const isWinner = winnerTeamId ? liveGame.teamOf[r.id] === winnerTeamId : false;
-          return (
-            <RankingRow
-              key={r.id}
-              position={idx + 1}
-              name={liveGame.teamMode ? `${playersMap[r.id]?.name ?? '?'} (Équipe ${liveGame.teamOf[r.id]})` : playersMap[r.id]?.name ?? '?'}
-              color={playersMap[r.id]?.color ?? '#888'}
-              scoreLabel={`${r.total} pts`}
-              highlight={isWinner || (idx === 0 && !winnerTeamId)}
-            />
-          );
-        })}
-      </View>
 
       {recentTurns.length > 0 && (
         <>

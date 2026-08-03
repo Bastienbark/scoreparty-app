@@ -15,6 +15,7 @@ import { AtcLiveGame, DartThrow, Player } from '../../types/models';
 import { colors, fonts, radii } from '../../theme/tokens';
 
 function throwLabel(t: DartThrow): string {
+  if (t.segment === 'miss') return 'Raté';
   if (t.segment === 'bull') return t.multiplier === 2 ? 'Bull' : '25';
   if (t.multiplier === 1) return `${t.segment}`;
   if (t.multiplier === 2) return `D${t.segment}`;
@@ -88,11 +89,13 @@ export function DartsAtcLiveScreen() {
         </View>
       )}
 
-      {target !== null && <DartsThrowPad onThrow={dartsAtcAddThrow} enabledSegments={enabledSegments} />}
-
-      <PressableScale scaleTo={0.96} onPress={dartsAtcUndoThrow} disabled={!canUndo} style={[styles.undoBtn, !canUndo && { opacity: 0.4 }]}>
-        <Text style={styles.undoLabel}>⌫ Annuler la dernière fléchette</Text>
-      </PressableScale>
+      {target !== null ? (
+        <DartsThrowPad onThrow={dartsAtcAddThrow} onUndo={dartsAtcUndoThrow} canUndo={canUndo} enabledSegments={enabledSegments} />
+      ) : (
+        <PressableScale scaleTo={0.96} onPress={dartsAtcUndoThrow} disabled={!canUndo} style={[styles.undoBtn, !canUndo && { opacity: 0.4 }]}>
+          <Text style={styles.undoLabel}>⌫ Annuler la dernière fléchette</Text>
+        </PressableScale>
+      )}
 
       <Text style={styles.sectionTitle}>Classement en direct</Text>
       <View style={{ gap: 6, marginBottom: 20 }}>

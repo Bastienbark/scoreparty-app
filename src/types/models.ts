@@ -124,7 +124,7 @@ export interface Trek12HistoryEntry {
 }
 
 export interface DartThrow {
-  segment: number | 'bull';
+  segment: number | 'bull' | 'miss';
   multiplier: 1 | 2 | 3;
   points: number;
 }

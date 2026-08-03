@@ -23,7 +23,8 @@ function allClosed(marks: CricketMarks): boolean {
 }
 
 /** Resolves a dart's literal segment to the slot currently displaying that value (bull always maps to the bull slot). Null = off-target dart, no active slot shows this value right now. */
-function resolveSlot(slotValues: CricketSlotValues, segment: number | 'bull'): CricketSlotKey | null {
+function resolveSlot(slotValues: CricketSlotValues, segment: number | 'bull' | 'miss'): CricketSlotKey | null {
+  if (segment === 'miss') return null;
   if (segment === 'bull') return 'bull';
   const found = REROLLABLE_SLOTS.find((k) => slotValues[k] === segment);
   return found ?? null;
