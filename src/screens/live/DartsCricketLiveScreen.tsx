@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
 import { DartsThrowPad } from '../../components/DartsThrowPad';
@@ -12,8 +12,8 @@ import { useAppStore } from '../../state/store';
 import { CricketLiveGame, CricketSlotKey, DartThrow, Player } from '../../types/models';
 import { colors, fonts, radii } from '../../theme/tokens';
 
-const LABEL_COL = 30;
-const CELL_COL = 46;
+const LABEL_COL = 32;
+const MIN_CELL = 54;
 
 function throwLabel(t: DartThrow): string {
   if (t.segment === 'miss') return 'Raté';
@@ -60,6 +60,10 @@ export function DartsCricketLiveScreen() {
 
   const finishNow = () => navigation.navigate('Recap');
   const canUndo = liveGame.currentThrows.length > 0 || liveGame.turns.length > 0;
+
+  const [tableWidth, setTableWidth] = useState(0);
+  const onTableLayout = (e: LayoutChangeEvent) => setTableWidth(e.nativeEvent.layout.width);
+  const cellWidth = tableWidth > 0 ? Math.max(MIN_CELL, (tableWidth - LABEL_COL) / liveGame.playerIds.length) : MIN_CELL;
 
   return (
     <LiveScreenLayout
@@ -113,15 +117,15 @@ export function DartsCricketLiveScreen() {
         </PressableScale>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableWrap}>
-        <View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableWrap} onLayout={onTableLayout}>
+        <View style={{ width: Math.max(tableWidth, LABEL_COL + cellWidth * liveGame.playerIds.length) }}>
           <View style={styles.row}>
             <View style={{ width: LABEL_COL }} />
             {liveGame.playerIds.map((pid) => {
               const teamId = liveGame.teamOf[pid];
               const teamColor = liveGame.teamMode ? (TEAM_COLOR[teamId] ?? colors.textMuted) : undefined;
               return (
-                <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 6 }}>
+                <View key={pid} style={{ width: cellWidth, alignItems: 'center', paddingVertical: 10 }}>
                   <View style={[styles.headerDot, { backgroundColor: playersMap[pid]?.color }]} />
                   <Text style={styles.headerName} numberOfLines={1}>
                     {playersMap[pid]?.name}
@@ -140,7 +144,7 @@ export function DartsCricketLiveScreen() {
               {liveGame.playerIds.map((pid) => {
                 const n = marks[pid][slot];
                 return (
-                  <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 4 }}>
+                  <View key={pid} style={{ width: cellWidth, alignItems: 'center', paddingVertical: 9 }}>
                     <Text style={[styles.mark, { color: n >= 3 ? colors.teal : n > 0 ? colors.amber : colors.textMutedDark }]}>{markSymbol(n)}</Text>
                   </View>
                 );
@@ -153,7 +157,7 @@ export function DartsCricketLiveScreen() {
               <Text style={styles.rowLabel}>Σ</Text>
             </View>
             {liveGame.playerIds.map((pid) => (
-              <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 6 }}>
+              <View key={pid} style={{ width: cellWidth, alignItems: 'center', paddingVertical: 10 }}>
                 <Text style={styles.scoreValue}>{individualScores[pid]}</Text>
               </View>
             ))}
@@ -167,7 +171,7 @@ export function DartsCricketLiveScreen() {
               {liveGame.playerIds.map((pid) => {
                 const teamId = liveGame.teamOf[pid];
                 return (
-                  <View key={pid} style={{ width: CELL_COL, alignItems: 'center', paddingVertical: 6 }}>
+                  <View key={pid} style={{ width: cellWidth, alignItems: 'center', paddingVertical: 10 }}>
                     <Text style={[styles.teamValue, { color: TEAM_COLOR[teamId] ?? colors.textPrimary }]}>{teamScores[teamId] ?? 0}</Text>
                   </View>
                 );
@@ -218,15 +222,15 @@ const styles = StyleSheet.create({
   winnerText: { fontFamily: fonts.heading, fontSize: 14, fontWeight: '600', color: colors.amber, textAlign: 'center' },
   tableWrap: { borderRadius: radii.md, backgroundColor: colors.surface, marginTop: 16, marginBottom: 14 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  headerDot: { width: 10, height: 10, borderRadius: 5, marginBottom: 2 },
-  headerName: { fontSize: 10, color: colors.textPrimary },
-  headerTeam: { fontSize: 9, fontWeight: '700', fontFamily: fonts.bodyBold, marginTop: 1 },
-  rowLabel: { fontSize: 12, fontWeight: '700', fontFamily: fonts.bodyBold, color: colors.textMuted },
-  mark: { fontSize: 16, fontWeight: '700' },
+  headerDot: { width: 11, height: 11, borderRadius: 6, marginBottom: 3 },
+  headerName: { fontSize: 12, color: colors.textPrimary },
+  headerTeam: { fontSize: 10.5, fontWeight: '700', fontFamily: fonts.bodyBold, marginTop: 1 },
+  rowLabel: { fontSize: 13, fontWeight: '700', fontFamily: fonts.bodyBold, color: colors.textMuted },
+  mark: { fontSize: 19, fontWeight: '700' },
   scoreRow: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
-  scoreValue: { fontFamily: fonts.headingBold, fontSize: 13, fontWeight: '700', color: colors.amber },
+  scoreValue: { fontFamily: fonts.headingBold, fontSize: 16, fontWeight: '700', color: colors.amber },
   teamRow: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
-  teamValue: { fontFamily: fonts.headingBold, fontSize: 13, fontWeight: '700' },
+  teamValue: { fontFamily: fonts.headingBold, fontSize: 16, fontWeight: '700' },
   undoBtn: { marginTop: 10, backgroundColor: colors.surfaceAlt2, borderRadius: radii.sm, paddingVertical: 12, alignItems: 'center' },
   undoLabel: { fontSize: 12, fontWeight: '600', color: colors.orange, fontFamily: fonts.bodySemiBold },
   sectionTitle: { fontFamily: fonts.heading, fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 8 },
