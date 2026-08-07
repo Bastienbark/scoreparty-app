@@ -48,6 +48,7 @@ export function SetupScreen() {
   const toggleVariant = useAppStore((s) => s.toggleSetupVariant);
   const selectDartsStartScore = useAppStore((s) => s.selectSetupDartsStartScore);
   const selectAtcHitType = useAppStore((s) => s.selectSetupAtcHitType);
+  const selectMilleSaborsThreshold = useAppStore((s) => s.selectSetupMilleSaborsThreshold);
   const toggleSetupPlayerTeam = useAppStore((s) => s.toggleSetupPlayerTeam);
   const toggleCountsForContest = useAppStore((s) => s.toggleSetupCountsForContest);
   const startGame = useAppStore((s) => s.startGame);
@@ -66,6 +67,7 @@ export function SetupScreen() {
   const isCricket = setup.gameId === 'darts-cricket';
   const isAtc = setup.gameId === 'darts-atc';
   const isShanghai = setup.gameId === 'darts-shanghai';
+  const isMilleSabords = setup.gameId === 'mille-sabords';
   const selectedGame = GAMES.find((g) => g.id === setup.gameId);
   const minPlayers = selectedGame?.minPlayers ?? 2;
   const maxPlayers = selectedGame?.maxPlayers ?? 7;
@@ -308,6 +310,24 @@ export function SetupScreen() {
                   activeFg={colors.bg}
                   onPress={() => !setup.variants['20'] && toggleVariant('20')}
                 />
+              </View>
+            </>
+          )}
+
+          {isMilleSabords && (
+            <>
+              <SectionLabel>3. Objectif de points</SectionLabel>
+              <View style={styles.chipsWrap}>
+                {[5000, 6000, 8000].map((t) => (
+                  <Chip
+                    key={t}
+                    label={`${t} pts`}
+                    active={!!setup.variants[t]}
+                    activeBg={colors.amber}
+                    activeFg={colors.bg}
+                    onPress={() => selectMilleSaborsThreshold(t)}
+                  />
+                ))}
               </View>
             </>
           )}

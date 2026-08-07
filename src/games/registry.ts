@@ -3,6 +3,7 @@ import { dartsAtcGame } from './dartsAroundTheClock';
 import { dartsCricketGame } from './dartsCricket';
 import { dartsShanghaiGame } from './dartsShanghai';
 import { dartsX01Game } from './dartsX01';
+import { milleSaborsGame } from './milleSabords';
 import { qwirkleGame } from './qwirkle';
 import { skyjoGame } from './skyjo';
 import { trek12Game } from './trek12';
@@ -24,6 +25,7 @@ export const GAMES: GameDef[] = [
   skyjoGame,
   qwirkleGame,
   trek12Game,
+  milleSaborsGame,
   dartsX01Game,
   dartsCricketGame,
   dartsAtcGame,

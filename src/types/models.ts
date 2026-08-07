@@ -268,6 +268,43 @@ export interface ShanghaiHistoryEntry {
   contestId?: string | null;
 }
 
+/**
+ * One player's turn. `points` is the net total they compute by hand off the
+ * physical dice (per the "carte Résumé" combo table) — can be negative for a
+ * failed "Bateau pirate" card. `penaltyToOthers` is only nonzero for an "Île
+ * de la Tête-de-Mort" turn (4+ skulls on the first roll): the active player
+ * scores nothing themselves, and this amount is deducted from every OTHER
+ * player instead. `instantWin` marks a "Magie pirate" (9 identical symbols),
+ * which ends the game immediately regardless of totals.
+ */
+export interface MilleSaborsTurn {
+  playerId: string;
+  points: number;
+  penaltyToOthers: number;
+  instantWin?: boolean;
+}
+
+export interface MilleSaborsLiveGame {
+  gameId: 'mille-sabords';
+  playerIds: string[];
+  /** First to reach this total (or more) triggers the game's end — 5000/6000/8000, default 6000. */
+  threshold: number;
+  turns: MilleSaborsTurn[];
+}
+
+export interface MilleSaborsHistoryEntry {
+  id: string;
+  gameId: 'mille-sabords';
+  date: string;
+  playerIds: string[];
+  threshold: number;
+  turns: MilleSaborsTurn[];
+  totals: Record<string, number>;
+  ranking: string[];
+  winnerId: string;
+  contestId?: string | null;
+}
+
 export type LiveGame =
   | CinqRoisLiveGame
   | TrouDuCulLiveGame
@@ -277,7 +314,8 @@ export type LiveGame =
   | DartsX01LiveGame
   | CricketLiveGame
   | AtcLiveGame
-  | ShanghaiLiveGame;
+  | ShanghaiLiveGame
+  | MilleSaborsLiveGame;
 export type HistoryEntry =
   | CinqRoisHistoryEntry
   | TrouDuCulHistoryEntry
@@ -287,7 +325,8 @@ export type HistoryEntry =
   | DartsX01HistoryEntry
   | CricketHistoryEntry
   | AtcHistoryEntry
-  | ShanghaiHistoryEntry;
+  | ShanghaiHistoryEntry
+  | MilleSaborsHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;
@@ -303,6 +342,8 @@ export interface KeypadModalState {
   round: number;
   pid: string;
   value: string;
+  /** Mille Sabords only: which field this entry is for — 'points' (default) or 'penalty' (Île de la Tête-de-Mort). */
+  kind?: 'points' | 'penalty';
 }
 
 export interface RulesTheme {

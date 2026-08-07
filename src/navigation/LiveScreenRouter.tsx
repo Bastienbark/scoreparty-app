@@ -5,6 +5,7 @@ import { DartsAtcLiveScreen } from '../screens/live/DartsAtcLiveScreen';
 import { DartsCricketLiveScreen } from '../screens/live/DartsCricketLiveScreen';
 import { DartsShanghaiLiveScreen } from '../screens/live/DartsShanghaiLiveScreen';
 import { DartsX01LiveScreen } from '../screens/live/DartsX01LiveScreen';
+import { MilleSaborsLiveScreen } from '../screens/live/MilleSaborsLiveScreen';
 import { QwirkleLiveScreen } from '../screens/live/QwirkleLiveScreen';
 import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
 import { Trek12LiveScreen } from '../screens/live/Trek12LiveScreen';
@@ -20,6 +21,7 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   skyjo: SkyjoLiveScreen,
   qwirkle: QwirkleLiveScreen,
   'trek-12': Trek12LiveScreen,
+  'mille-sabords': MilleSaborsLiveScreen,
   'darts-x01': DartsX01LiveScreen,
   'darts-cricket': DartsCricketLiveScreen,
   'darts-atc': DartsAtcLiveScreen,

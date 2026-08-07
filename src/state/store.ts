@@ -6,6 +6,7 @@ import { buildTeamOf, deriveCricketState, previewCricketThrow, rerollSlotValues,
 import { deriveAtcState } from '../games/dartsAroundTheClock';
 import { deriveShanghaiState } from '../games/dartsShanghai';
 import { dartPoints, deriveX01State, evaluateX01Turn } from '../games/dartsX01';
+import { deriveMilleSaborsState } from '../games/milleSabords';
 import { getGame, getGameOrThrow } from '../games/registry';
 import { playerColors } from '../theme/tokens';
 import type {
@@ -127,6 +128,7 @@ interface AppState {
   toggleSetupVariant: (key: string) => void;
   selectSetupDartsStartScore: (score: number) => void;
   selectSetupAtcHitType: (type: 'any' | 'single' | 'double') => void;
+  selectSetupMilleSaborsThreshold: (threshold: number) => void;
   toggleSetupPlayerTeam: (pid: string, idx: number) => void;
   toggleSetupCountsForContest: () => void;
   startGame: () => boolean;
@@ -142,6 +144,11 @@ interface AppState {
 
   openQwirkleEntry: (pid: string) => void;
   qwirkleDeleteTurn: (index: number) => void;
+
+  openMilleSaborsPointsEntry: (pid: string) => void;
+  openMilleSaborsPenaltyEntry: (pid: string) => void;
+  milleSaborsInstantWin: (pid: string) => void;
+  milleSaborsDeleteTurn: (index: number) => void;
 
   openTrek12Score: (pid: string) => void;
 
@@ -386,7 +393,9 @@ export const useAppStore = create<AppState>((set, get) => {
                   ? { hitSingle: false, hitDouble: false, includeBull: false }
                   : gameId === 'darts-shanghai'
                     ? { '20': false }
-                    : ({} as TrouDuCulVariants),
+                    : gameId === 'mille-sabords'
+                      ? { '6000': true }
+                      : ({} as TrouDuCulVariants),
       },
     })),
 
@@ -428,6 +437,9 @@ export const useAppStore = create<AppState>((set, get) => {
 
   selectSetupAtcHitType: (type) =>
     set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, hitSingle: type === 'single', hitDouble: type === 'double' } } })),
+
+  selectSetupMilleSaborsThreshold: (threshold) =>
+    set((s) => ({ setup: { ...s.setup, variants: { ...s.setup.variants, '5000': false, '6000': false, '8000': false, [threshold]: true } } })),
 
   toggleSetupPlayerTeam: (pid, idx) =>
     set((s) => {
@@ -492,6 +504,13 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ liveGame: { ...live, scores }, modal: null });
       return;
     }
+    if (live.gameId === 'mille-sabords') {
+      const value = Number(modal.value || 0);
+      const turn = modal.kind === 'penalty' ? { playerId: modal.pid, points: 0, penaltyToOthers: Math.max(0, value) } : { playerId: modal.pid, points: value, penaltyToOthers: 0 };
+      const turns = [...live.turns, turn];
+      set({ liveGame: { ...live, turns }, modal: null });
+      return;
+    }
     if (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo') return;
     const { round, pid, value } = modal;
     const rounds = live.rounds.map((r) => (r.round === round ? { ...r, scores: { ...r.scores, [pid]: Number(value || 0) } } : r));
@@ -524,6 +543,34 @@ export const useAppStore = create<AppState>((set, get) => {
     set((s) => {
       const live = s.liveGame;
       if (!live || live.gameId !== 'qwirkle') return {};
+      const turns = live.turns.filter((_, i) => i !== index);
+      return { liveGame: { ...live, turns } };
+    }),
+
+  openMilleSaborsPointsEntry: (pid) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'mille-sabords' || deriveMilleSaborsState(live).winnerId) return;
+    set({ modal: { round: 0, pid, value: '', kind: 'points' } });
+  },
+
+  openMilleSaborsPenaltyEntry: (pid) => {
+    const live = get().liveGame;
+    if (!live || live.gameId !== 'mille-sabords' || deriveMilleSaborsState(live).winnerId) return;
+    set({ modal: { round: 0, pid, value: '', kind: 'penalty' } });
+  },
+
+  milleSaborsInstantWin: (pid) =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'mille-sabords' || deriveMilleSaborsState(live).winnerId) return {};
+      const turns = [...live.turns, { playerId: pid, points: 0, penaltyToOthers: 0, instantWin: true }];
+      return { liveGame: { ...live, turns } };
+    }),
+
+  milleSaborsDeleteTurn: (index) =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'mille-sabords') return {};
       const turns = live.turns.filter((_, i) => i !== index);
       return { liveGame: { ...live, turns } };
     }),
