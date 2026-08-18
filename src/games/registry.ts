@@ -4,6 +4,7 @@ import { dartsAtcGame } from './dartsAroundTheClock';
 import { dartsCricketGame } from './dartsCricket';
 import { dartsShanghaiGame } from './dartsShanghai';
 import { dartsX01Game } from './dartsX01';
+import { lostCitiesRwGame } from './lostCitiesRollWrite';
 import { milleSaborsGame } from './milleSabords';
 import { qwirkleGame } from './qwirkle';
 import { skyjoGame } from './skyjo';
@@ -27,6 +28,7 @@ export const GAMES: GameDef[] = [
   qwirkleGame,
   trek12Game,
   azulGame,
+  lostCitiesRwGame,
   milleSaborsGame,
   dartsX01Game,
   dartsCricketGame,

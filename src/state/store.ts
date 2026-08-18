@@ -501,7 +501,7 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ liveGame: { ...live, turns }, modal: null });
       return;
     }
-    if (live.gameId === 'trek-12') {
+    if (live.gameId === 'trek-12' || live.gameId === 'lost-cities-rw') {
       const scores = { ...live.scores, [modal.pid]: Number(modal.value || 0) };
       set({ liveGame: { ...live, scores }, modal: null });
       return;
@@ -597,7 +597,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   openTrek12Score: (pid) => {
     const live = get().liveGame;
-    if (!live || live.gameId !== 'trek-12') return;
+    if (!live || (live.gameId !== 'trek-12' && live.gameId !== 'lost-cities-rw')) return;
     const existing = live.scores[pid];
     set({ modal: { round: 0, pid, value: existing !== undefined ? String(existing) : '' } });
   },

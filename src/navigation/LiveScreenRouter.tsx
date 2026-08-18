@@ -6,6 +6,7 @@ import { DartsAtcLiveScreen } from '../screens/live/DartsAtcLiveScreen';
 import { DartsCricketLiveScreen } from '../screens/live/DartsCricketLiveScreen';
 import { DartsShanghaiLiveScreen } from '../screens/live/DartsShanghaiLiveScreen';
 import { DartsX01LiveScreen } from '../screens/live/DartsX01LiveScreen';
+import { LostCitiesRwLiveScreen } from '../screens/live/LostCitiesRwLiveScreen';
 import { MilleSaborsLiveScreen } from '../screens/live/MilleSaborsLiveScreen';
 import { QwirkleLiveScreen } from '../screens/live/QwirkleLiveScreen';
 import { SkyjoLiveScreen } from '../screens/live/SkyjoLiveScreen';
@@ -23,6 +24,7 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   qwirkle: QwirkleLiveScreen,
   'trek-12': Trek12LiveScreen,
   azul: AzulLiveScreen,
+  'lost-cities-rw': LostCitiesRwLiveScreen,
   'mille-sabords': MilleSaborsLiveScreen,
   'darts-x01': DartsX01LiveScreen,
   'darts-cricket': DartsCricketLiveScreen,

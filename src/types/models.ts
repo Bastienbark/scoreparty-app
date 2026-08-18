@@ -149,6 +149,22 @@ export interface Trek12HistoryEntry {
   contestId?: string | null;
 }
 
+export interface LostCitiesRwLiveGame {
+  gameId: 'lost-cities-rw';
+  playerIds: string[];
+  scores: Record<string, number>;
+}
+
+export interface LostCitiesRwHistoryEntry {
+  id: string;
+  gameId: 'lost-cities-rw';
+  date: string;
+  playerIds: string[];
+  totals: Record<string, number>;
+  ranking: string[];
+  contestId?: string | null;
+}
+
 export interface DartThrow {
   segment: number | 'bull' | 'miss';
   multiplier: 1 | 2 | 3;
@@ -342,7 +358,8 @@ export type LiveGame =
   | AtcLiveGame
   | ShanghaiLiveGame
   | MilleSaborsLiveGame
-  | AzulLiveGame;
+  | AzulLiveGame
+  | LostCitiesRwLiveGame;
 export type HistoryEntry =
   | CinqRoisHistoryEntry
   | TrouDuCulHistoryEntry
@@ -354,7 +371,8 @@ export type HistoryEntry =
   | AtcHistoryEntry
   | ShanghaiHistoryEntry
   | MilleSaborsHistoryEntry
-  | AzulHistoryEntry;
+  | AzulHistoryEntry
+  | LostCitiesRwHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;
