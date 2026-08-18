@@ -141,6 +141,8 @@ interface AppState {
   modalConfirm: () => void;
   crNextRound: () => void;
   skyjoNextRound: () => void;
+  azulNextRound: () => void;
+  toggleAzulRowCompleted: () => void;
 
   openQwirkleEntry: (pid: string) => void;
   qwirkleDeleteTurn: (index: number) => void;
@@ -469,7 +471,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
   openCell: (round, pid) => {
     const live = get().liveGame;
-    if (!live || (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo')) return;
+    if (!live || (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo' && live.gameId !== 'azul')) return;
     const existing = live.rounds[round - 1].scores[pid];
     set({ modal: { round, pid, value: existing !== undefined ? String(existing) : '' } });
   },
@@ -511,7 +513,7 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ liveGame: { ...live, turns }, modal: null });
       return;
     }
-    if (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo') return;
+    if (live.gameId !== 'cinq-rois' && live.gameId !== 'skyjo' && live.gameId !== 'azul') return;
     const { round, pid, value } = modal;
     const rounds = live.rounds.map((r) => (r.round === round ? { ...r, scores: { ...r.scores, [pid]: Number(value || 0) } } : r));
     set({ liveGame: { ...live, rounds } as LiveGame, modal: null });
@@ -531,6 +533,24 @@ export const useAppStore = create<AppState>((set, get) => {
       const nextRoundNum = live.currentRound + 1;
       const rounds = [...live.rounds, { round: nextRoundNum, scores: {} }];
       return { liveGame: { ...live, rounds, currentRound: nextRoundNum } };
+    }),
+
+  azulNextRound: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'azul') return {};
+      const nextRoundNum = live.currentRound + 1;
+      const rounds = [...live.rounds, { round: nextRoundNum, scores: {}, rowCompleted: false }];
+      return { liveGame: { ...live, rounds, currentRound: nextRoundNum } };
+    }),
+
+  toggleAzulRowCompleted: () =>
+    set((s) => {
+      const live = s.liveGame;
+      if (!live || live.gameId !== 'azul') return {};
+      const idx = live.currentRound - 1;
+      const rounds = live.rounds.map((r, i) => (i === idx ? { ...r, rowCompleted: !r.rowCompleted } : r));
+      return { liveGame: { ...live, rounds } };
     }),
 
   openQwirkleEntry: (pid) => {

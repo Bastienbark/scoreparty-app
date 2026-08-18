@@ -85,6 +85,32 @@ export interface SkyjoHistoryEntry {
   contestId?: string | null;
 }
 
+export interface AzulRound {
+  round: number;
+  scores: Record<string, number>;
+  /** True if any player completed a horizontal line of 5 on their wall this round — triggers the game's last round. */
+  rowCompleted: boolean;
+}
+
+export interface AzulLiveGame {
+  gameId: 'azul';
+  playerIds: string[];
+  currentRound: number;
+  rounds: AzulRound[];
+}
+
+export interface AzulHistoryEntry {
+  id: string;
+  gameId: 'azul';
+  date: string;
+  playerIds: string[];
+  rounds: AzulRound[];
+  totals: Record<string, number>;
+  ranking: string[];
+  roundsPlayed: number;
+  contestId?: string | null;
+}
+
 export interface QwirkleTurn {
   playerId: string;
   points: number;
@@ -315,7 +341,8 @@ export type LiveGame =
   | CricketLiveGame
   | AtcLiveGame
   | ShanghaiLiveGame
-  | MilleSaborsLiveGame;
+  | MilleSaborsLiveGame
+  | AzulLiveGame;
 export type HistoryEntry =
   | CinqRoisHistoryEntry
   | TrouDuCulHistoryEntry
@@ -326,7 +353,8 @@ export type HistoryEntry =
   | CricketHistoryEntry
   | AtcHistoryEntry
   | ShanghaiHistoryEntry
-  | MilleSaborsHistoryEntry;
+  | MilleSaborsHistoryEntry
+  | AzulHistoryEntry;
 
 export interface SetupState {
   gameId: string | null;

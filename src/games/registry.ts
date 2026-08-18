@@ -1,3 +1,4 @@
+import { azulGame } from './azul';
 import { cinqRoisGame } from './cinqRois';
 import { dartsAtcGame } from './dartsAroundTheClock';
 import { dartsCricketGame } from './dartsCricket';
@@ -25,6 +26,7 @@ export const GAMES: GameDef[] = [
   skyjoGame,
   qwirkleGame,
   trek12Game,
+  azulGame,
   milleSaborsGame,
   dartsX01Game,
   dartsCricketGame,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../state/store';
+import { AzulLiveScreen } from '../screens/live/AzulLiveScreen';
 import { CinqRoisLiveScreen } from '../screens/live/CinqRoisLiveScreen';
 import { DartsAtcLiveScreen } from '../screens/live/DartsAtcLiveScreen';
 import { DartsCricketLiveScreen } from '../screens/live/DartsCricketLiveScreen';
@@ -21,6 +22,7 @@ const LIVE_SCREENS: Record<string, React.ComponentType> = {
   skyjo: SkyjoLiveScreen,
   qwirkle: QwirkleLiveScreen,
   'trek-12': Trek12LiveScreen,
+  azul: AzulLiveScreen,
   'mille-sabords': MilleSaborsLiveScreen,
   'darts-x01': DartsX01LiveScreen,
   'darts-cricket': DartsCricketLiveScreen,
